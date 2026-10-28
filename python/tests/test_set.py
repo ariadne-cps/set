@@ -26,3 +26,17 @@ def test_new_set_tutorial_bindings():
     assert smooth.dimension() == 2
     dp = DoublePrecision()
     assert len(str(smooth.value(FloatDP(exact(0.5), dp)))) > 0
+
+
+def test_effective_constrained_image_set_real_box_domain():
+    """A RealBox is constructed from intervals, not dicts keyed by Real."""
+    real_domain = RealBox([
+        RealInterval(Real(-1), Real(1)),
+        RealInterval(Real(-1), Real(1)),
+    ])
+    u0 = EffectiveScalarMultivariateFunction.coordinate(2, 0)
+    u1 = EffectiveScalarMultivariateFunction.coordinate(2, 1)
+    mapping = EffectiveVectorMultivariateFunction([u0 + u1, u0 * u1])
+    image = ConstrainedImageSet(real_domain, mapping)
+    assert image.number_of_parameters() == 2
+    assert image.dimension() == 2

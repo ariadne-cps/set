@@ -17,7 +17,8 @@ def tutorial_set():
         {exact(-1): exact(1)},
         {exact(-1): exact(1)},
     ])
-    real_domain = RealBox([{Real(-1): Real(1)}, {Real(-1): Real(1)}])
+    real_domain = RealBox([RealInterval(Real(-1), Real(1)),
+                           RealInterval(Real(-1), Real(1))])
     effective = ConstrainedImageSet(real_domain, function)
     show("effective set", effective)
     show("effective domain", effective.domain())
