@@ -44,9 +44,6 @@
 
 namespace Ariadne {
 
-template<class X> struct RigorousNumericsTraits;
-template<class X, class XX=typename RigorousNumericsTraits<X>::Type> struct LinearProgram;
-
 
 template<class X, class B=X> using AffineConstraint = Constraint<Affine<X>,B>;
 template<class F> using ValidatedAffineConstraint = Constraint<Affine<Bounds<F>>,Bounds<F>>;
@@ -137,8 +134,8 @@ class ValidatedAffineConstrainedImageSet
 
     const Vector<ValidatedAffineModelDP>& space_models() const { return _space_models; }
     const List<ValidatedAffineModelConstraintDP>& constraint_models() const { return _constraint_models; }
-    // Independent LP representation, also used by paving algorithms.
-    Void construct_linear_program(LinearProgram<FloatDP,FloatDPBounds>& lp) const;
+    //! Build the affine feasibility constraints A*x=b with l<=x<=u.
+    Void construct_linear_constraints(Matrix<FloatDP>& A, Vector<FloatDP>& b, Vector<FloatDP>& l, Vector<FloatDP>& u) const;
 
     List<Pair<double,double>> boundary(SizeType xc, SizeType yc) const;
     virtual OutputStream& _write(OutputStream& os) const override;

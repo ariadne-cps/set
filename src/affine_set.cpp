@@ -33,7 +33,6 @@
 #include "function/affine_model.hpp"
 
 #include "geometry/box.hpp"
-#include "set/detail/linear_program_state.hpp"
 #include "set/affine_set.hpp"
 
 
@@ -242,15 +241,17 @@ UpperBoxType ValidatedAffineConstrainedImageSet::bounding_box() const {
 ValidatedLowerKleenean ValidatedAffineConstrainedImageSet::separated(const ExactBoxType& bx) const {
     ARIADNE_PRECONDITION_MSG(this->dimension()==bx.dimension(),"set="<<*this<<", box="<<bx);
     ExactBoxType wbx=cast_exact_box(widen(bx));
-    LinearProgram<FloatDP> lp;
-    this->construct_linear_program(lp);
+    Matrix<FloatDP> A;
+    Vector<FloatDP> b;
+    Vector<FloatDP> l;
+    Vector<FloatDP> u;
+    this->construct_linear_constraints(A,b,l,u);
     for(SizeType i=0; i!=bx.size(); ++i) {
-        lp.l[i]=FloatDP(sub(down,wbx[i].lower_bound(),this->_space_models[i].error().raw()));
-        lp.u[i]=FloatDP(add(up,wbx[i].upper_bound(),this->_space_models[i].error().raw()));
+        l[i]=FloatDP(sub(down,wbx[i].lower_bound(),this->_space_models[i].error().raw()));
+        u[i]=FloatDP(add(up,wbx[i].upper_bound(),this->_space_models[i].error().raw()));
     }
     LinearInteriorPointSolver optimiser;
-    ValidatedKleenean feasible=optimiser.feasible(lp.l,lp.u,lp.A,lp.b);
-    //feasible=LinearSimplexSolver<FloatDP>().hotstarted_feasible(lp.A,lp.b,lp.l,lp.u,lp.vt,lp.p,lp.B,lp.x,lp.y);
+    ValidatedKleenean feasible=optimiser.feasible(l,u,A,b);
     return !feasible;
 }
 
@@ -271,7 +272,7 @@ ValidatedAffineConstrainedImageSet image(ValidatedAffineConstrainedImageSet set,
 
 
 Void
-ValidatedAffineConstrainedImageSet::construct_linear_program(LinearProgram<FloatDP>& lp) const
+ValidatedAffineConstrainedImageSet::construct_linear_constraints(Matrix<FloatDP>& A, Vector<FloatDP>& b, Vector<FloatDP>& l, Vector<FloatDP>& u) const
 {
     // Set up linear programming problem.
     // We have parameter e and point x, which need to satisfy
@@ -296,59 +297,58 @@ ValidatedAffineConstrainedImageSet::construct_linear_program(LinearProgram<Float
     const SizeType np=this->number_of_parameters();
     const SizeType nc=this->_constraint_models.size();
 
-    lp.A.resize(nx+nc,nx+np+nc);
-    lp.b.resize(nx+nc);
-    lp.c.resize(nx+np+nc);
-    lp.l.resize(nx+np+nc);
-    lp.u.resize(nx+np+nc);
+    A.resize(nx+nc,nx+np+nc);
+    b.resize(nx+nc);
+    l.resize(nx+np+nc);
+    u.resize(nx+np+nc);
 
     // Make part of linear program only dependent on set
     // Need to set all values since matrix is uninitialised
     for(SizeType i=0; i!=nx; ++i) {
         for(SizeType j=0; j!=nx; ++j) {
-            lp.A[i][j]=0;
+            A[i][j]=0;
         }
-        lp.A[i][i] = -1;
+        A[i][i] = -1;
         for(SizeType j=0; j!=np; ++j) {
-            lp.A[i][nx+j] = +this->_space_models[i].gradient(j);
+            A[i][nx+j] = +this->_space_models[i].gradient(j);
         }
         for(SizeType j=0; j!=nc; ++j) {
-            lp.A[i][nx+np+j]=0;
+            A[i][nx+np+j]=0;
         }
-        lp.b[i] = -this->_space_models[i].value();
+        b[i] = -this->_space_models[i].value();
     }
     for(SizeType i=0; i!=nc; ++i) {
         for(SizeType j=0; j!=nx; ++j) {
-            lp.A[nx+i][j]=0;
+            A[nx+i][j]=0;
         }
         for(SizeType j=0; j!=np; ++j) {
-            lp.A[nx+i][nx+j] = +this->_constraint_models[i].function().gradient(j);
+            A[nx+i][nx+j] = +this->_constraint_models[i].function().gradient(j);
         }
         for(SizeType j=0; j!=nc; ++j) {
-            lp.A[nx+i][nx+np+j]=0;
+            A[nx+i][nx+np+j]=0;
         }
-        lp.A[nx+i][nx+np+i] = +1;
-        lp.b[nx+i] = -this->_constraint_models[i].function().value();
+        A[nx+i][nx+np+i] = +1;
+        b[nx+i] = -this->_constraint_models[i].function().value();
     }
 
     for(SizeType i=0; i!=np; ++i) {
-        //lp.l[nx+i]=this->_domain[i].lower_bound();
-        //lp.u[nx+i]=this->_domain[i].upper_bound();
-        lp.l[nx+i]=-1;
-        lp.u[nx+i]=+1;
+        //l[nx+i]=this->_domain[i].lower_bound();
+        //u[nx+i]=this->_domain[i].upper_bound();
+        l[nx+i]=-1;
+        u[nx+i]=+1;
     }
     for(SizeType i=0; i!=nc; ++i) {
-        lp.l[nx+np+i]=-this->_constraint_models[i].upper_bound().value();
-        lp.u[nx+np+i]=-this->_constraint_models[i].lower_bound().value();
+        l[nx+np+i]=-this->_constraint_models[i].upper_bound().value();
+        u[nx+np+i]=-this->_constraint_models[i].lower_bound().value();
     }
 
     // Make part of linear program dependent on cell be +/-infinity
     for(SizeType i=0; i!=nx; ++i) {
-        lp.l[i]=-infty;
-        lp.u[i]=+infty;
+        l[i]=-infty;
+        u[i]=+infty;
     }
 
-    LOGGING_PRINTLN("set="<<*this<<", A="<<lp.A<<", b="<<lp.b<<", l="<<lp.l<<", u="<<lp.u);
+    LOGGING_PRINTLN("set="<<*this<<", A="<<A<<", b="<<b<<", l="<<l<<", u="<<u);
 }
 
 

@@ -7,7 +7,7 @@
 [![Coverage Status](https://github.com/ariadne-cps/set/actions/workflows/coverage.yml/badge.svg)](https://github.com/ariadne-cps/set/actions/workflows/coverage.yml)
 [![codecov](https://codecov.io/gh/ariadne-cps/set/branch/main/graph/badge.svg)](https://codecov.io/gh/ariadne-cps/set)
 
-Ariadne Set is the standalone C++20 set-representation layer of Ariadne. It implements constrained and validated image sets, affine constrained image sets, curves and interpolated curves, and list sets. Grid pavings and paver algorithms belong to the **downstream Paving layer**, not Set.
+Ariadne Set is the standalone C++20 set-representation layer of Ariadne. It implements constrained and validated image sets, affine constrained image sets, curves and interpolated curves, and list sets.
 
 ## Layout
 
@@ -17,8 +17,6 @@ Ariadne Set is the standalone C++20 set-representation layer of Ariadne. It impl
 - Python binding, tests and tutorial: `python/bindings/`, `python/tests/` and `python/tutorials/`.
 - Standalone installed C++ example: `tutorials/tutorial_set/`.
 
-The source tree retains the historical `polyhedron.cpp`, `polytope.cpp`, and `zonotope.cpp` implementation files, but they were not compiled by the original Kernel Set object target and are **not enabled** in this extraction.
-
 ## Dependencies
 
 Set depends directly on:
@@ -26,9 +24,7 @@ Set depends directly on:
 - [ariadne-cps/solving](https://github.com/ariadne-cps/solving) (Git submodule `ss/solving`).
 - [ariadne-cps/configuration](https://github.com/ariadne-cps/configuration) (Git submodule `ss/configuration`).
 
-Solving provides Function, Geometry and their lower dependencies transitively. Set does not depend on Kernel or Paving. The architecture is `geometry <- function <- solving <- set <- paving`.
-
-The private LP state header under `include/set/detail/` allows the affine separation algorithm to build without requiring an unpublished header from Kernel.
+Solving provides Function, Geometry and their lower dependencies transitively.
 
 ## Build
 
