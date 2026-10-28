@@ -26,6 +26,13 @@ Void test_multifunction_image()
     ARIADNE_TEST_CONSTRUCT(ValidatedVectorMultivariateMultifunctionModel<DP>,mvfmdp,(dom,f,prms,swp));;
     ARIADNE_TEST_CONSTRUCT(ValidatedVectorMultivariateMultifunctionModel<DP>,mvfdp,(mvfmdp));;
 
+    // The first two coordinates are inputs; the final coordinate is uncertainty.
+    ARIADNE_TEST_EQUALS(mvfp.argument_size(),2u);
+    ARIADNE_TEST_EQUALS(mvfp.error_domain().dimension(),1u);
+    ARIADNE_TEST_EQUALS(mvfmdp.argument_size(),2u);
+    ARIADNE_TEST_EQUALS(mvfmdp.domain().dimension(),2u);
+    ARIADNE_TEST_EQUALS(mvfmdp.error_domain().dimension(),1u);
+
     Vector<ValidatedNumber> v(2,1);
     ARIADNE_TEST_ASSIGN_CONSTRUCT(ValidatedLocatedSet<RealVector>,res,mvfp(v));
     ARIADNE_TEST_ASSIGN(res,mvf(v));
