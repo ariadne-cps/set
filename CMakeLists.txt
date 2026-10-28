@@ -20,7 +20,8 @@ if(EXISTS "${PROJECT_SOURCE_DIR}/.git")
     require_same_dependency_commit(Configuration
         CHAINS
             "configuration"
-            "solving|configuration"
+            "linear-programming|configuration"
+            "constraint-solving|configuration"
     )
 endif()
 
@@ -34,7 +35,7 @@ target_include_directories(set INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include/ariadne-set>
 )
-target_link_libraries(set INTERFACE solving)
+target_link_libraries(set INTERFACE linear_programming constraint_solving)
 
 add_subdirectory(src)
 target_link_libraries(SET_SRC PRIVATE set)

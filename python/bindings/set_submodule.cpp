@@ -23,7 +23,7 @@
  */
 
 #include "pybind11.hpp"
-#include "solving-utilities.hpp"
+#include "function-utilities.hpp"
 #include "numeric_submodule.hpp"
 #include "interval-utilities.hpp"
 #include "geometry/geometry.hpp"

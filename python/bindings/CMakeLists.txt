@@ -5,7 +5,8 @@ add_library(pyariadne-set-submodule-obj OBJECT set_submodule.cpp)
 target_include_directories(pyariadne-set-submodule-obj PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
     "${PYTHON_COMMON_SOURCE_DIR}/include"
-    $<TARGET_PROPERTY:pyariadne-solving,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:pyariadne-linear_programming,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:pyariadne-constraint_solving,INTERFACE_INCLUDE_DIRECTORIES>
 )
 target_link_libraries(pyariadne-set-submodule-obj PRIVATE
     pyariadne-python-common
@@ -21,7 +22,8 @@ add_library(pyariadne-set INTERFACE)
 target_sources(pyariadne-set INTERFACE $<TARGET_OBJECTS:pyariadne-set-submodule-obj>)
 target_include_directories(pyariadne-set INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<TARGET_PROPERTY:pyariadne-solving,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:pyariadne-linear_programming,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:pyariadne-constraint_solving,INTERFACE_INCLUDE_DIRECTORIES>
 )
-target_link_libraries(pyariadne-set INTERFACE pyariadne-solving)
+target_link_libraries(pyariadne-set INTERFACE pyariadne-linear_programming pyariadne-constraint_solving)
 ariadne_add_python_module(NAME set MODULE_SOURCE set_module.cpp)

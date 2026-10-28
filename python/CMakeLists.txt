@@ -9,8 +9,8 @@ option(PYTHON_ENFORCE_TESTS "Enforce Python tests" OFF)
 if(Python3_FOUND)
     report_python_configuration_once()
 
-    if(NOT TARGET pyariadne-solving)
-        message(FATAL_ERROR "The Function Python binding target is required to build pyariadne-set.")
+    if(NOT TARGET pyariadne-linear_programming OR NOT TARGET pyariadne-constraint_solving)
+        message(FATAL_ERROR "The Linear Programming and Constraint Solving Python binding targets are required to build pyariadne-set.")
     endif()
     add_subdirectory(bindings)
 

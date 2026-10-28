@@ -25,7 +25,8 @@
 #ifndef ARIADNE_SET_MODULE_HPP
 #define ARIADNE_SET_MODULE_HPP
 
-#include "ariadne-solving.hpp"
+#include "ariadne-linear-programming.hpp"
+#include "ariadne-constraint-solving.hpp"
 
 #include "set/affine_set.hpp"
 #include "set/curve.hpp"
