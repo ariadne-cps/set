@@ -23,6 +23,7 @@
  */
 
 #include <iostream>
+#include <memory>
 #include "function/function.hpp"
 #include "geometry/box.hpp"
 #include "set/affine_set.hpp"
@@ -75,6 +76,12 @@ class TestAffineSet
         ValidatedAffineConstrainedImageSet from_models_and_constraints(models,constraints);
         ARIADNE_TEST_EQUALS(from_models.number_of_parameters(),2u);
         ARIADNE_TEST_EQUALS(from_models_and_constraints.number_of_constraints(),0u);
+        // The representation exposed to downstream algorithms retains its models.
+        ARIADNE_TEST_EQUALS(from_models.space_models().size(),2u);
+        ARIADNE_TEST_EQUALS(from_models_and_constraints.constraint_models().size(),0u);
+        std::unique_ptr<ValidatedAffineConstrainedImageSet> cloned(from_models.clone());
+        ARIADNE_TEST_EQUALS(cloned->dimension(),from_models.dimension());
+        ARIADNE_TEST_EQUALS(cloned->number_of_parameters(),from_models.number_of_parameters());
 
         auto y=ValidatedScalarMultivariateFunction::coordinates(2);
         ValidatedVectorMultivariateFunction h({y[0]+y[1],y[0]-y[1]});
