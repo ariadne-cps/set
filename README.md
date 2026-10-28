@@ -19,12 +19,14 @@ Ariadne Set is the standalone C++20 set-representation layer of Ariadne. It impl
 
 ## Dependencies
 
-Set depends directly on:
+The repository tracks these Git submodules:
 
-- [ariadne-cps/solving](https://github.com/ariadne-cps/solving) (Git submodule `ss/solving`).
-- [ariadne-cps/configuration](https://github.com/ariadne-cps/configuration) (Git submodule `ss/configuration`).
+- [ariadne-cps/configuration](https://github.com/ariadne-cps/configuration) (`ss/configuration`).
+- [ariadne-cps/solving](https://github.com/ariadne-cps/solving) (`ss/solving`).
+- [ariadne-cps/linear-programming](https://github.com/ariadne-cps/linear-programming) (`ss/linear-programming`).
+- [ariadne-cps/constraint-solving](https://github.com/ariadne-cps/constraint-solving) (`ss/constraint-solving`).
 
-Solving provides Function, Geometry and their lower dependencies transitively.
+The CMake build currently uses Solving, which provides Function, Geometry and their lower dependencies transitively. Linear Programming and Constraint Solving are tracked as submodules but are not yet added to the CMake build.
 
 ## Build
 

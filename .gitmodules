@@ -4,3 +4,9 @@
 [submodule "ss/solving"]
 	path = ss/solving
 	url = https://github.com/ariadne-cps/solving
+[submodule "ss/linear-programming"]
+	path = ss/linear-programming
+	url = https://github.com/ariadne-cps/linear-programming
+[submodule "ss/constraint-solving"]
+	path = ss/constraint-solving
+	url = https://github.com/ariadne-cps/constraint-solving
