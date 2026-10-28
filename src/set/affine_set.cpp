@@ -1,0 +1,605 @@
+/***************************************************************************
+ *            geometry/affine_set.cpp
+ *
+ *  Copyright  2009-20  Pieter Collins
+ *
+ ****************************************************************************/
+
+/*
+ *  This file is part of Ariadne.
+ *
+ *  Ariadne is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  Ariadne is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with Ariadne.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include "function/functional.hpp"
+#include "numeric/numeric.hpp"
+#include "algebra/vector.hpp"
+#include "algebra/matrix.hpp"
+#include "solving/linear_interior_point_method.hpp"
+#include "solving/linear_simplex_algorithm.hpp"
+#include "function/function.hpp"
+#include "function/affine.hpp"
+#include "function/affine_model.hpp"
+
+#include "geometry/box.hpp"
+#include "set/detail/linear_program_state.hpp"
+#include "set/affine_set.hpp"
+
+
+#include <algorithm>
+#include <cmath>
+#include <numbers>
+#include <vector>
+
+
+namespace Ariadne {
+
+typedef Vector<FloatDP> RawFloatVector;
+typedef Vector<ExactIntervalType> ExactIntervalVectorType;
+
+Pair<Interval<FloatDP>,FloatDPError> make_domain(Interval<FloatDPBall> const& ivl);
+
+
+
+ValidatedAffineConstrainedImageSet::ValidatedAffineConstrainedImageSet(const RealBox& bx)
+    : ValidatedAffineConstrainedImageSet(Box<Interval<FloatDPBall>>(bx,dp))
+{
+    FloatDPBall(0_z,dp);
+}
+
+
+Pair<Interval<FloatDP>,FloatDPError> make_domain(Interval<FloatDPBall> const& ivl) {
+    FloatDPBall const& dlb=ivl.lower_bound();
+    FloatDPBall const& dub=ivl.upper_bound();
+    FloatDP dl(FloatDP(Float32(dlb.value(),near)));
+    FloatDP du(FloatDP(Float32(dub.value(),near)));
+    FloatDPError e=cast_positive(max(mag(dlb.value()-dl)+dlb.error(),mag(dlb.value()-dl)+dlb.error()));
+    return make_pair(make_interval(dl,du),e);
+}
+
+ValidatedAffineConstrainedImageSet::ValidatedAffineConstrainedImageSet(const Box<Interval<FloatDPBall>>& bx)
+    : _domain(bx.dimension(),Interval<FloatDP>(0_z,dp)), _space_models(bx.dimension(),ValidatedAffineModelDP(bx.dimension(),dp))
+{
+    Vector<FloatDPError> errs(bx.dimension(),dp);
+
+    for(SizeType i=0; i!=bx.dimension(); ++i) {
+        make_lpair(_domain[i],errs[i])=make_domain(bx[i]);
+    }
+
+    for(SizeType i=0; i!=bx.dimension(); ++i) {
+        _space_models[i]=ValidatedAffineModelDP::scaling(bx.dimension(),i,_domain[i],dp);
+        _space_models[i].error()+=errs[i];
+    }
+}
+
+ValidatedAffineConstrainedImageSet::ValidatedAffineConstrainedImageSet(const ExactBoxType& d)
+    : _domain(d), _space_models(ValidatedAffineModelDP::scalings(d,dp))
+{
+}
+
+
+ValidatedAffineConstrainedImageSet::ValidatedAffineConstrainedImageSet(const ExactBoxType& d,
+                     const Vector<Affine<FloatDPBounds>>& f)
+    : ValidatedAffineConstrainedImageSet(d,f,List<ValidatedAffineConstraintDP>())
+{
+}
+
+ValidatedAffineConstrainedImageSet::ValidatedAffineConstrainedImageSet(const ExactBoxType& d,
+                     const Vector<Affine<FloatDPBounds>>& f,
+                     const List<ValidatedAffineConstraintDP>& c)
+    : _domain(d), _space_models(f.size(),ValidatedAffineModelDP(d.size(),dp)), _constraint_models()
+{
+    ARIADNE_PRECONDITION_MSG(f.size()>0,"f="<<f);
+    ARIADNE_PRECONDITION_MSG(_domain.dimension() == f[0].argument_size(),"The domain dimension ("<<_domain.dimension()<<") does not match the function argument size ("<<_space_models[0].argument_size()<<").");
+
+    Vector<Affine<FloatDPBounds>> parameters=Affine<FloatDPBounds>::variables(d.size(),dp);
+    for(SizeType j=0; j!=d.size(); ++j) {
+        const FloatDPBounds midpoint(d[j].midpoint(),dp);
+        const FloatDPBounds radius(d[j].radius(),dp);
+        parameters[j]=midpoint+radius*parameters[j];
+    }
+    for(SizeType i=0; i!=f.size(); ++i) {
+        Affine<FloatDPBounds> model(d.size(),dp);
+        model=f[i].value();
+        for(SizeType j=0; j!=d.size(); ++j) {
+            model=model+f[i].gradient(j)*parameters[j];
+        }
+        _space_models[i]=affine_model(model);
+    }
+    for(SizeType i=0; i!=c.size(); ++i) {
+        ARIADNE_PRECONDITION_MSG(_domain.dimension() == c[i].argument_size(),"The domain dimension ("<<_domain.dimension()<<") does not match the constraint argument size ("<<c[i].argument_size()<<").");
+        Affine<FloatDPBounds> model(d.size(),dp);
+        model=c[i].function().value();
+        for(SizeType j=0; j!=d.size(); ++j) {
+            model=model+c[i].function().gradient(j)*parameters[j];
+        }
+        _constraint_models.append(ValidatedAffineModelConstraintDP(c[i].lower_bound(),affine_model(model),c[i].upper_bound()));
+    }
+}
+
+ValidatedAffineConstrainedImageSet::ValidatedAffineConstrainedImageSet(const ExactBoxType& d,
+                     const Vector<ValidatedAffineModelDP>& f,
+                     const List<ValidatedAffineModelConstraintDP>& c)
+    : _domain(d), _space_models(f), _constraint_models(c)
+{
+    ARIADNE_PRECONDITION_MSG(f.size()>0,"f="<<f);
+    ARIADNE_PRECONDITION_MSG(_domain.dimension() == f[0].argument_size(),"The domain dimension ("<<_domain.dimension()<<") does not match the function argument size ("<<_space_models[0].argument_size()<<").");
+    for (auto cons : _constraint_models)
+        ARIADNE_PRECONDITION_MSG(_domain.dimension() == cons.argument_size(),"The domain dimension ("<<_domain.dimension()<<") does not match the constraint argument size ("<<cons.argument_size()<<").");
+}
+
+ValidatedAffineConstrainedImageSet::ValidatedAffineConstrainedImageSet(const Vector<ValidatedAffineModelDP>& f,
+                     const List<ValidatedAffineModelConstraintDP>& c)
+    : ValidatedAffineConstrainedImageSet(ExactBoxType::unit_box(f.size()==0u ? 0u : f[0].argument_size()),f,c)
+{
+}
+
+ValidatedAffineConstrainedImageSet::ValidatedAffineConstrainedImageSet(const Vector<ValidatedAffineModelDP>& f)
+    : ValidatedAffineConstrainedImageSet(f,List<ValidatedAffineModelConstraintDP>())
+{
+}
+
+ValidatedAffineConstrainedImageSet::ValidatedAffineConstrainedImageSet(const ExactBoxType& D, const Matrix<FloatDP>& G, const Vector<FloatDP>& h)
+{
+    this->construct(D,G,h);
+}
+
+Void ValidatedAffineConstrainedImageSet::construct(const ExactBoxType& D, const Matrix<FloatDP>& G, const Vector<FloatDP>& h)
+{
+    ARIADNE_PRECONDITION_MSG(G.row_size()==h.size() && G.row_size()>0,"G="<<G<<", h="<<h);
+    this->_domain=D;
+    this->_space_models=Vector<ValidatedAffineModelDP>(G.row_size(),ValidatedAffineModelDP(G.column_size(),dp));
+    for(SizeType i=0; i!=G.row_size(); ++i) {
+        ValidatedAffineModelDP x(G.column_size(),dp);
+        x=h[i];
+        for(SizeType j=0; j!=G.column_size(); ++j) {
+            x[j]=G[i][j];
+        }
+        this->_space_models[i]=x;
+    }
+}
+
+Void
+ValidatedAffineConstrainedImageSet::new_constraint(const ValidatedAffineModelConstraintDP& c)
+{
+    ARIADNE_PRECONDITION(this->_space_models.size()>0);
+    ARIADNE_PRECONDITION_MSG(this->number_of_parameters()==c.argument_size(),"c["<<c.argument_size()<<"]="<<c<<" f["<<this->number_of_parameters()<<"]="<<this->_space_models);
+    _constraint_models.append(c);
+}
+
+Void
+ValidatedAffineConstrainedImageSet::new_parameter_constraint(const ValidatedAffineConstraintDP& c)
+{
+    ARIADNE_PRECONDITION_MSG(this->_space_models.size()>0,"f="<<this->_space_models);
+    ARIADNE_PRECONDITION_MSG(this->number_of_parameters()==c.argument_size(),"c="<<c<<" f="<<this->_space_models);
+    this->new_constraint(ValidatedAffineModelConstraintDP(c.lower_bound(),affine_model(c.function()),c.upper_bound()));
+}
+
+
+
+
+
+ValidatedAffineConstrainedImageSet*
+ValidatedAffineConstrainedImageSet::clone() const
+{
+    return new ValidatedAffineConstrainedImageSet(*this);
+}
+
+
+DimensionType
+ValidatedAffineConstrainedImageSet::dimension() const
+{
+    return this->_space_models.size();
+}
+
+SizeType
+ValidatedAffineConstrainedImageSet::number_of_parameters() const
+{
+    ARIADNE_PRECONDITION(this->_space_models.size()>0);
+    return this->_space_models[0].argument_size();
+}
+
+SizeType
+ValidatedAffineConstrainedImageSet::number_of_constraints() const
+{
+    return this->_constraint_models.size();
+}
+
+ExactBoxType
+ValidatedAffineConstrainedImageSet::domain() const
+{
+    return this->_domain;
+}
+
+ValidatedKleenean ValidatedAffineConstrainedImageSet::is_bounded() const {
+    return ValidatedKleenean(ExactBoxType(this->domain()).is_bounded()) || ValidatedKleenean(LogicalValue::INDETERMINATE);
+}
+
+UpperBoxType ValidatedAffineConstrainedImageSet::bounding_box() const {
+    UpperBoxType result(this->dimension());
+    ExactBoxType domain=this->domain();
+    for(SizeType i=0; i!=this->dimension(); ++i) {
+        result[i]=this->_space_models[i].range();
+    }
+    return result;
+}
+
+
+
+
+
+ValidatedLowerKleenean ValidatedAffineConstrainedImageSet::separated(const ExactBoxType& bx) const {
+    ARIADNE_PRECONDITION_MSG(this->dimension()==bx.dimension(),"set="<<*this<<", box="<<bx);
+    ExactBoxType wbx=cast_exact_box(widen(bx));
+    LinearProgram<FloatDP> lp;
+    this->construct_linear_program(lp);
+    for(SizeType i=0; i!=bx.size(); ++i) {
+        lp.l[i]=FloatDP(sub(down,wbx[i].lower_bound(),this->_space_models[i].error().raw()));
+        lp.u[i]=FloatDP(add(up,wbx[i].upper_bound(),this->_space_models[i].error().raw()));
+    }
+    LinearInteriorPointSolver optimiser;
+    ValidatedKleenean feasible=optimiser.feasible(lp.l,lp.u,lp.A,lp.b);
+    //feasible=LinearSimplexSolver<FloatDP>().hotstarted_feasible(lp.A,lp.b,lp.l,lp.u,lp.vt,lp.p,lp.B,lp.x,lp.y);
+    return !feasible;
+}
+
+ValidatedLowerKleenean ValidatedAffineConstrainedImageSet::is_empty() const {
+    return ValidatedLowerKleenean(this->separated(cast_exact_box(this->bounding_box()))) || ValidatedKleenean(LogicalValue::INDETERMINATE);
+}
+
+ValidatedLowerKleenean ValidatedAffineConstrainedImageSet::inside(const ExactBoxType& bx) const {
+    ARIADNE_PRECONDITION_MSG(this->dimension()==bx.dimension(),"set="<<*this<<", box="<<bx);
+    return widen(this->bounding_box()).inside(bx);
+}
+
+
+ValidatedAffineConstrainedImageSet image(ValidatedAffineConstrainedImageSet set, ValidatedVectorMultivariateFunction const& h) {
+    set._space_models=compose(h,set._space_models);
+    return set;
+}
+
+
+Void
+ValidatedAffineConstrainedImageSet::construct_linear_program(LinearProgram<FloatDP>& lp) const
+{
+    // Set up linear programming problem.
+    // We have parameter e and point x, which need to satisfy
+    //  x=Gp+h;  Cp+d<=0; Ep+f = 0; lb<=x<=ub, -1<=p<=+1
+    // Add slack variables for the inequality constraints Cp+s=d; s>=0
+    // The standard form is then
+    //  -x+Gp=-h,  Cp+s=-d; Ep = -f; lb<=x<=ub, -1<=p<=+1, 0<=s
+    // The only dependence on the cell is in the inequality constraints for x
+
+    // Set up linear program of form Ax=b; l<=x<=u.
+    //  Order variables as x,e,s
+    //  A=( -I G 0 )  b=( -h )  l=(xl -1 0) u=(xu +1 inf)
+    //    (  0 C I )    ( -d )
+    //    (  0 E 0 )    ( -f )
+    // Spacial dimension nx; parameter dimension ne; number of constraints nc
+
+	// Warning: Uniform part of space function is not included!
+
+    LOGGING_SCOPE_CREATE;
+
+    const SizeType nx=this->dimension();
+    const SizeType np=this->number_of_parameters();
+    const SizeType nc=this->_constraint_models.size();
+
+    lp.A.resize(nx+nc,nx+np+nc);
+    lp.b.resize(nx+nc);
+    lp.c.resize(nx+np+nc);
+    lp.l.resize(nx+np+nc);
+    lp.u.resize(nx+np+nc);
+
+    // Make part of linear program only dependent on set
+    // Need to set all values since matrix is uninitialised
+    for(SizeType i=0; i!=nx; ++i) {
+        for(SizeType j=0; j!=nx; ++j) {
+            lp.A[i][j]=0;
+        }
+        lp.A[i][i] = -1;
+        for(SizeType j=0; j!=np; ++j) {
+            lp.A[i][nx+j] = +this->_space_models[i].gradient(j);
+        }
+        for(SizeType j=0; j!=nc; ++j) {
+            lp.A[i][nx+np+j]=0;
+        }
+        lp.b[i] = -this->_space_models[i].value();
+    }
+    for(SizeType i=0; i!=nc; ++i) {
+        for(SizeType j=0; j!=nx; ++j) {
+            lp.A[nx+i][j]=0;
+        }
+        for(SizeType j=0; j!=np; ++j) {
+            lp.A[nx+i][nx+j] = +this->_constraint_models[i].function().gradient(j);
+        }
+        for(SizeType j=0; j!=nc; ++j) {
+            lp.A[nx+i][nx+np+j]=0;
+        }
+        lp.A[nx+i][nx+np+i] = +1;
+        lp.b[nx+i] = -this->_constraint_models[i].function().value();
+    }
+
+    for(SizeType i=0; i!=np; ++i) {
+        //lp.l[nx+i]=this->_domain[i].lower_bound();
+        //lp.u[nx+i]=this->_domain[i].upper_bound();
+        lp.l[nx+i]=-1;
+        lp.u[nx+i]=+1;
+    }
+    for(SizeType i=0; i!=nc; ++i) {
+        lp.l[nx+np+i]=-this->_constraint_models[i].upper_bound().value();
+        lp.u[nx+np+i]=-this->_constraint_models[i].lower_bound().value();
+    }
+
+    // Make part of linear program dependent on cell be +/-infinity
+    for(SizeType i=0; i!=nx; ++i) {
+        lp.l[i]=-infty;
+        lp.u[i]=+infty;
+    }
+
+    LOGGING_PRINTLN("set="<<*this<<", A="<<lp.A<<", b="<<lp.b<<", l="<<lp.l<<", u="<<lp.u);
+}
+
+
+class PerturbationGenerator {
+  public:
+    PerturbationGenerator() : _n(0) { }
+    FloatDPApproximation operator()() { _n=_n+3; if(_n>19) { _n=_n-37; } return _n*FloatDPApproximation(1e-13_pr,dp); }
+  private:
+    Int _n;
+};
+
+List<Pair<double,double>>
+ValidatedAffineConstrainedImageSet::boundary(SizeType xind, SizeType yind) const
+{
+    LOGGING_SCOPE_CREATE;
+
+    LOGGING_PRINTLN("xind="<<xind<<", yind="<<yind);
+
+    LinearSimplexSolver<FloatDPApproximation> lpsolver;
+    PerturbationGenerator eps;
+
+    static const FloatDPApproximation _inf ( Ariadne::inf, dp );
+
+    const SizeType nx=_domain.size();
+    const SizeType ne=2u;
+    const SizeType nc=_constraint_models.size();
+    const SizeType np=nx+ne+nc;
+
+    // Set up matrix of function values
+    ValidatedAffineModelDP const& xa=this->_space_models[xind];
+    ValidatedAffineModelDP const& ya=this->_space_models[yind];
+
+    // The set is given by pt=Gx+h, where Ax=b and l<=x<=u
+    Matrix<FloatDPApproximation> G=Matrix<FloatDPApproximation>::zero(ne,np,dp);
+    for(SizeType j=0; j!=nx; ++j) {
+        G[0][j]=FloatDPApproximation(xa.gradient(j))+eps();
+        G[1][j]=FloatDPApproximation(ya.gradient(j))+eps();
+    }
+    G[0][nx+nc+0]=FloatDPApproximation(1.0_x,dp);
+    G[1][nx+nc+1]=FloatDPApproximation(1.0_x,dp);
+    Vector<FloatDPApproximation> h(ne,dp);
+    h[0]=FloatDPApproximation(xa.value());
+    h[1]=FloatDPApproximation(ya.value());
+    LOGGING_PRINTLN("G="<<G)
+    LOGGING_PRINTLN("h="<<h);
+
+    // Set up linear programming problem Ax=b; l<=x<=u
+    // Since the parameter domain is given by cl<=Ay+b+/-e<=cu, -1<=y<=+1, introduce slack variables z such that z-Ay=b, with cl-e<=z<=cu+e
+    // Need to keep point error variables, introduce extra variables
+
+    Matrix<FloatDPApproximation> A(nc,np,dp);
+    Vector<FloatDPApproximation> b(nc,dp);
+    Vector<FloatDPApproximation> l(np,dp);
+    Vector<FloatDPApproximation> u(np,dp);
+
+    for(SizeType j=0; j!=nx; ++j) {
+        l[j]=FloatDPApproximation(-1.0_x,dp);
+        u[j]=FloatDPApproximation(+1.0_x,dp);
+    }
+
+    for(SizeType i=0; i!=nc; ++i) {
+        for(SizeType j=0; j!=nx; ++j) {
+            A[i][j] = neg( numeric_cast<FloatDPApproximation>(this->_constraint_models[i].function().gradient(j)) );
+        }
+        for(SizeType j=nx; j!=nx+nc+ne; ++j) {
+            A[i][j] = 0.0_x;
+        }
+        A[i][nx+i]=1.0_x;
+        FloatDPApproximation fb=numeric_cast<FloatDPApproximation>(this->_constraint_models[i].function().value());
+        FloatDPApproximation fe=numeric_cast<FloatDPApproximation>(this->_constraint_models[i].function().error().raw());
+        FloatDPApproximation cl=numeric_cast<FloatDPApproximation>(this->_constraint_models[i].lower_bound().value());
+        FloatDPApproximation cu=numeric_cast<FloatDPApproximation>(this->_constraint_models[i].upper_bound().value());
+        b[i]=fb+eps();
+        l[nx+i]=cl-fe;
+        u[nx+i]=cu+fe;
+    }
+
+    l[nx+nc]=static_cast<FloatDPApproximation>(-xa.error().raw());
+    u[nx+nc]=static_cast<FloatDPApproximation>(+xa.error().raw());
+    l[nx+nc+1]=static_cast<FloatDPApproximation>(-ya.error().raw());
+    u[nx+nc+1]=static_cast<FloatDPApproximation>(+ya.error().raw());
+    LOGGING_PRINTLN("A="<<A<<" b="<<b<<" l="<<l<<" u="<<u);
+
+    List<Pair<double,double>> vertices;
+
+    // Set up simplex algorithm working variables
+    Array<Slackness> vt; Array<SizeType> p(nc); Matrix<FloatDPApproximation> B(nc,nc,dp);
+    Vector<FloatDPApproximation> x(np,dp); Vector<FloatDPApproximation> y(nc,dp);
+
+    // Find an initial feasible point
+    ValidatedKleenean feasible = lpsolver.hotstarted_feasible(l,u,A,b, vt, p,B, x,y);
+    LOGGING_PRINTLN("A="<<A<<" b="<<b<<" l="<<l<<" u="<<u<<" vt="<<vt<<" p="<<p)
+    LOGGING_PRINTLN("x="<<x<<" Ax="<< A*x );
+    lpsolver.consistency_check(l,u,A,b, vt,p,B,x);
+
+    // If problem not feasible, then set is empty; return empty list
+    if(!possibly(feasible)) { return vertices; }
+
+    Vector<FloatDPApproximation> c(np,FloatDPApproximation(0.0_x,dp));
+    for(SizeType j=0; j!=np; ++j) { c[j]=G[0][j]; }
+
+    // Find a point on the boundary; choose the point minimising the spacial x-coordinate
+    x=lpsolver.hotstarted_minimise(c,l,u,A,b, vt,p,B);
+    LOGGING_PRINTLN("A="<<A<<" b="<<b<<" l="<<l<<" u="<<u<<" vt="<<vt<<" p="<<p)
+    LOGGING_PRINTLN("x="<<x<<" Ax="<<(A*x)<<" c="<<c<<" cx="<<dot(c,x)<<" pt="<<G*x+h);
+
+    lpsolver.consistency_check(l,u,A,b, vt,p,B,x);
+
+    if(nc==0u) {
+        // For an unconstrained zonotope every simplex direction has exactly one
+        // nonzero parameter component.  The generic traversal below repeatedly
+        // scans all candidates and invokes lpstep(), making a boundary with n
+        // generators quadratic.  At the x-minimising point all active edge
+        // directions lie in the right half-plane; order them once by angle from
+        // the downward vertical and then traverse that order and its opposites.
+        struct BoundaryDirection {
+            SizeType variable;
+            double angle;
+        };
+        std::vector<BoundaryDirection> directions;
+        directions.reserve(np);
+        for(SizeType k=0; k!=np; ++k) {
+            SizeType const j=p[k];
+            FloatDPApproximation const ds(
+                vt[j]==Slackness::LOWER ? +1.0_x : -1.0_x,dp);
+            double const vx=(G[0][j]*ds).raw().get_d();
+            double const vy=(G[1][j]*ds).raw().get_d();
+            double angle=std::atan2(vx,-vy);
+            if(angle<0.0) { angle+=2.0*std::numbers::pi; }
+            directions.push_back({j,angle});
+        }
+        std::sort(
+            directions.begin(),directions.end(),
+            [](BoundaryDirection const& lhs, BoundaryDirection const& rhs) {
+                if(lhs.angle!=rhs.angle) { return lhs.angle<rhs.angle; }
+                return lhs.variable<rhs.variable;
+            });
+
+        Vector<FloatDPApproximation> pt=G*x+h;
+        for(SizeType half=0u; half!=2u; ++half) {
+            for(BoundaryDirection const& direction:directions) {
+                SizeType const j=direction.variable;
+                FloatDPApproximation const old_x=x[j];
+                if(vt[j]==Slackness::LOWER) {
+                    x[j]=u[j];
+                    vt[j]=Slackness::UPPER;
+                } else {
+                    x[j]=l[j];
+                    vt[j]=Slackness::LOWER;
+                }
+                FloatDPApproximation const delta=x[j]-old_x;
+                pt[0]+=G[0][j]*delta;
+                pt[1]+=G[1][j]*delta;
+                vertices.push_back(Pair<double,double>(pt[0].raw().get_d(),pt[1].raw().get_d()));
+            }
+        }
+        return vertices;
+    }
+
+    // We always want to turn left, so we need to choose a direction d such that
+    // (v0*d0+v1*d1) is positive and the ratio (v0*d1-v1*d0)/(v0*d0+v1*d1) is maximised.
+    // Note that in in all cases, v0*d1-v1*d0 must be positive.
+
+    Array<Slackness> initial_variable_type=vt;
+
+    Vector<FloatDPApproximation> pt=G*x+h; // The current point in space
+    Vector<FloatDPApproximation> last_vec({0.0_x,-1.0_x},dp); // The direction in space of the last step along the boundary
+                                        // Should be set orthogonal to the direction (+1,0) which is minimised in finding first boundary point
+    Vector<FloatDPApproximation> best_next_vec(2,dp);
+    Vector<FloatDPApproximation> trial_vec(2,dp);
+    Vector<FloatDPApproximation> Aj(nc,dp); // The jth column of A
+    Vector<FloatDPApproximation> BAj(nc,dp); // The jth column of A
+
+
+    // FIXME: Do we need check below?
+    // if(nx==ne) { vertices.push_back(Pair<double,double>(pt[0],pt[1])); return vertices; }
+
+    do {
+        FloatDPApproximation cot_theta_max(-inf,dp);
+        SizeType s=np; // The index giving the variable x[p[s]] to enter the basis
+
+        // Compute direction the point Gx moves in when variable x[j]=x[p[k]] enters the basis
+        // This direction is given by Gd where d_B=-A_B^{-1} A_N e_j and
+        //   di=+1/-1 depending on whether variable x[j] is at lower or upper bound
+        for(SizeType k=nc; k!=np; ++k) {
+            // Test variable to enter basis; there are m to test, one for each dimension of the domain
+            SizeType j=p[k];
+            Aj=column(A,j);
+                BAj=B*Aj;
+
+                // Compute G*d directly. The simplex direction d has only the
+                // entering component and the nc basic components nonzero, so
+                // constructing a dense np-vector and multiplying G*d would
+                // turn large unconstrained zonotopes into cubic work.
+                FloatDPApproximation ds(
+                    vt[j]==Slackness::LOWER ? +1.0_x : -1.0_x,dp);
+                trial_vec[0]=G[0][j]*ds;
+                trial_vec[1]=G[1][j]*ds;
+                for(SizeType i=0; i!=nc; ++i) {
+                    FloatDPApproximation di=-BAj[i]*ds;
+                    trial_vec[0]+=G[0][p[i]]*di;
+                    trial_vec[1]+=G[1][p[i]]*di;
+                }
+
+                // Compare the direction moved in this step with the last step.
+                // dot compares the direction of the two steps;
+                //   positive means an obtuse angle i.e. the same general direction.
+                // cross compares whether we turn to the left or the right.
+                // Since we traverse the boundary anticlockwise, cross should be positive.
+                FloatDPApproximation dot=last_vec[0]*trial_vec[0]+last_vec[1]*trial_vec[1];
+                FloatDPApproximation cross=last_vec[0]*trial_vec[1]-last_vec[1]*trial_vec[0];
+                FloatDPApproximation cot_theta=dot/cross;
+                LOGGING_PRINTLN_AT(1,"k="<<k<<" p[k]="<<p[k]<<" ds="<<ds<<" trial_vec="<<trial_vec<<" last_vec="<<last_vec<<
+                              " dot="<<dot<<" cross="<<cross<<" cot="<<cot_theta);
+
+
+                // The boundary is traversed anticlockwise, so the exact cross-product
+                // is nonnegative. Roundoff can make it slightly negative; clamp it to zero.
+                if(cross.raw()<=0.0_x ) {
+                    cross=+0;
+                    cot_theta=-inf;
+                }
+
+                // Allow for equality; in particular, if cot_theta=-infty,
+                // then may turn round and go backwards.
+                if(cot_theta.raw()>=cot_theta_max.raw()) {
+                    cot_theta_max=cot_theta;
+                    best_next_vec=trial_vec;
+                    s=k;
+                }
+        }
+
+        LOGGING_PRINTLN_AT(1,"Choosing variable x["<<p[s]<<"]=x[p["<<s<<"]] to enter basis");
+        lpsolver.lpstep(l,u,A,b, vt,p,B,x,s);
+        pt=G*x+h;
+        last_vec=best_next_vec;
+        LOGGING_PRINTLN_AT(2,"G="<<G<<" h="<<h<<" x="<<x<<" pt="<<pt);
+        LOGGING_PRINTLN_AT(1,"A="<<A<<" b="<<b<<" l="<<l<<" u="<<u<<" vt="<<vt<<" p="<<p<<" x="<<x<<" Ax="<<A*x<<" pt="<<pt<<" vec="<<best_next_vec);
+
+        vertices.push_back(Pair<double,double>(pt[0].raw().get_d(),pt[1].raw().get_d()));
+
+    } while(vt!=initial_variable_type);
+
+    LOGGING_PRINTLN("vertices="<<vertices);
+    return vertices;
+
+}
+
+OutputStream& ValidatedAffineConstrainedImageSet::_write(OutputStream& os) const {
+    return os << "ValidatedAffineConstrainedImageSet( domain=" << this->_domain << ", function=" << this->_space_models << ", constraints=" << this->_constraint_models <<" )";
+}
+
+
+} // namespace Ariadne

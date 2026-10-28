@@ -1,0 +1,153 @@
+/***************************************************************************
+ *            geometry/curve.cpp
+ *
+ *  Copyright  2007-20  Pieter Collins
+ *
+ ****************************************************************************/
+
+/*
+ *  This file is part of Ariadne.
+ *
+ *  Ariadne is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  Ariadne is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with Ariadne.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include "function/functional.hpp"
+#include "function/taylor_model.hpp"
+#include "function/formula.hpp"
+#include <cassert>
+
+#include "algebra/vector.hpp"
+#include "algebra/matrix.hpp"
+#include "algebra/differential.hpp"
+#include "algebra/algebra.hpp"
+#include "geometry/point.hpp"
+#include "geometry/box.hpp"
+
+#include "set/curve.hpp"
+
+
+namespace Ariadne {
+
+
+
+Curve::Curve(const EffectiveVectorUnivariateFunction& f)
+    : _function(f)
+{
+    // The univariate function type fixes the argument size to one.
+}
+
+
+Curve::Curve(const Curve& c)
+    : _function(c._function)
+{
+}
+
+
+Curve*
+Curve::clone() const
+{
+    return new Curve(*this);
+}
+
+
+DimensionType
+Curve::dimension() const
+{
+    return this->_function.result_size();
+}
+
+
+DegreeType
+Curve::smoothness() const
+{
+    return SMOOTH;
+}
+
+
+
+Curve::PointType
+Curve::value(const ParameterType& s) const
+{
+    Vector<FloatDPApproximation> fv=this->_function.evaluate(s);
+    return PointType(fv);
+}
+
+
+Curve::TangentVectorType
+Curve::tangent(const ParameterType& s) const
+{
+    return Ariadne::tangent(this->_function,s);
+}
+
+
+
+OutputStream&
+Curve::_write(OutputStream& os) const
+{
+    return os << "Curve( function=" << this->_function << " )";
+}
+
+
+
+InterpolatedCurve*
+InterpolatedCurve::clone() const
+{
+    return new InterpolatedCurve(*this);
+}
+
+Void
+InterpolatedCurve::insert(const ParameterType& s, const PointType& pt) {
+    if(!this->_points.empty()) { ARIADNE_PRECONDITION(pt.size()==this->dimension()); }
+    this->_points.insert(Pair< ParameterType, PointType >(s,pt));
+}
+
+Void
+InterpolatedCurve::insert(const Dyadic& s, const PointType& pt) {
+    PrecisionType spr;
+    this->insert(ParameterType(s,spr),pt);
+}
+
+Void
+InterpolatedCurve::insert(const RawFloatDP& s, const Vector<RawFloatDP>& pt) {
+    // The typed overload checks the dimension after scalar conversion.
+    this->insert(ParameterType(s),PointType(Vector<FloatDPApproximation>(pt)));
+}
+
+UpperBoxType
+InterpolatedCurve::bounding_box() const
+{
+    // Approximation<FloatDP> stores a raw FloatDP, but the enclosing
+    // Point objects are not interchangeable by reinterpret_cast.
+    // Convert each scalar explicitly to preserve type safety.
+    const PointType& first=this->_points.begin()->second;
+    ExactBoxType bx(this->dimension());
+    for(SizeType i=0; i!=bx.dimension(); ++i) {
+        bx[i]=ExactIntervalType(cast_exact(first[i]));
+    }
+    for(ConstIterator iter=this->_points.begin(); iter!=this->_points.end(); ++iter) {
+        for(SizeType i=0; i!=bx.dimension(); ++i) {
+            bx[i]=hull(bx[i],cast_exact(iter->second[i]));
+        }
+    }
+    return bx;
+}
+
+OutputStream&
+InterpolatedCurve::_write(OutputStream& os) const
+{
+    return os << (*this);
+}
+
+
+} // namespace Ariadne
