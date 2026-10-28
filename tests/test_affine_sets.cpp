@@ -279,6 +279,19 @@ class TestAffineSet
         ARIADNE_TEST_ASSERT(std::abs(max_y-1.0)<1e-6);
     }
 
+    Void test_empty_constrained_boundary() {
+        // The parameter domain is [-1,1]^2, but -x[1]<=-2 requires
+        // x[1]>=2. The affine image is therefore empty and has no boundary.
+        D=ExactBoxType::unit_box(2);
+        x=Affine<FloatDPBounds>::variables(2,dp);
+        set=ValidatedAffineConstrainedImageSet(D,{x[0],x[1]});
+        set.new_parameter_constraint(-1.0_x*x[1] <= -2.0_x);
+
+        ARIADNE_TEST_ASSERT(definitely(set.is_empty()));
+        List<Pair<double,double>> vertices=set.boundary(0,1);
+        ARIADNE_TEST_ASSERT(vertices.empty());
+    }
+
     Void test_large_zonotope_boundary() {
         // Keep n=501: the 501 distinct planar generators yield 2*n=1002
         // boundary vertices, deliberately exceeding the historical 1000-step
@@ -371,6 +384,7 @@ class TestAffineSet
         ARIADNE_TEST_CALL(test_nonunit_domain());
         ARIADNE_TEST_CALL(test_separated());
         ARIADNE_TEST_CALL(test_constrained_boundary());
+        ARIADNE_TEST_CALL(test_empty_constrained_boundary());
         ARIADNE_TEST_CALL(test_large_zonotope_boundary());
         ARIADNE_TEST_CALL(test_collinear_negative_zonotope_boundary());
         ARIADNE_TEST_CALL(test_near_vertical_zonotope_boundary());
