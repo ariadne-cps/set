@@ -178,7 +178,32 @@ Void test_join_image_sets() {
     ARIADNE_TEST_ASSERT(!text.str().empty());
 }
 
+Void test_split_chooses_widest_parameter() {
+    // With three coordinates, the largest domain radius belongs to coordinate 1.
+    ConstrainedImageSet effective(RealBox{{-1,1},{-3,3},{-2,2}});
+    auto split_effective=effective.split();
+    ARIADNE_TEST_EQUALS(split_effective.first.number_of_parameters(),3u);
+    ARIADNE_TEST_EQUALS(split_effective.second.number_of_parameters(),3u);
+    ARIADNE_TEST_ASSERT(decide(split_effective.first.domain()[1].upper_bound()<Real(1)));
+    ARIADNE_TEST_ASSERT(decide(split_effective.second.domain()[1].lower_bound()>Real(-1)));
+
+    // With the first coordinate widest, neither later coordinate should be chosen.
+    ConstrainedImageSet first_widest(RealBox{{-4,4},{-1,1}});
+    auto split_first=first_widest.split();
+    ARIADNE_TEST_ASSERT(decide(split_first.first.domain()[0].upper_bound()<Real(1)));
+    ARIADNE_TEST_ASSERT(decide(split_first.second.domain()[0].lower_bound()>Real(-1)));
+
+    // A tie in a validated domain should be resolved by the first coordinate.
+    ValidatedConstrainedImageSet validated(ExactBoxType::unit_box(2u));
+    auto split_validated=validated.split();
+    ARIADNE_TEST_ASSERT(same(split_validated.first.domain(),
+        ExactBoxType{{-1.0_x,0.0_x},{-1.0_x,1.0_x}}));
+    ARIADNE_TEST_ASSERT(same(split_validated.second.domain(),
+        ExactBoxType{{0.0_x,1.0_x},{-1.0_x,1.0_x}}));
+}
+
 Int main() {
+    ARIADNE_TEST_CALL(test_split_chooses_widest_parameter());
     ARIADNE_TEST_CALL(test_join_image_sets());
     ARIADNE_TEST_CALL(test_default_image_sets());
     ARIADNE_TEST_CALL(test_validated_image_operations());
