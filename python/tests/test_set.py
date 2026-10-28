@@ -40,3 +40,17 @@ def test_effective_constrained_image_set_real_box_domain():
     image = ConstrainedImageSet(real_domain, mapping)
     assert image.number_of_parameters() == 2
     assert image.dimension() == 2
+
+
+def test_interpolated_curve_python_constructor_and_insert():
+    """Python exposes a seeded constructor, not the C++ default constructor."""
+    dp = DoublePrecision()
+    p0 = FloatDPPoint([FloatDP(exact(0), dp), FloatDP(exact(0), dp)])
+    p1 = FloatDPApproximationPoint([
+        FloatDPApproximation(1, dp), FloatDPApproximation(1, dp)
+    ])
+    trajectory = InterpolatedCurve(FloatDP(exact(0), dp), p0)
+    trajectory.insert(FloatDP(exact(1), dp), p1)
+    assert trajectory.size() == 2
+    assert trajectory.dimension() == 2
+    assert trajectory.bounding_box().dimension() == 2

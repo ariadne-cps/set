@@ -68,14 +68,13 @@ def tutorial_set():
 
     section("Interpolated sampled curve")
     dp = DoublePrecision()
-    p0 = FloatDPApproximationPoint([
-        FloatDPApproximation(0, dp), FloatDPApproximation(0, dp)
+    p0 = FloatDPPoint([
+        FloatDP(exact(0), dp), FloatDP(exact(0), dp)
     ])
     p1 = FloatDPApproximationPoint([
         FloatDPApproximation(1, dp), FloatDPApproximation(1, dp)
     ])
-    trajectory = InterpolatedCurve()
-    trajectory.insert(FloatDP(exact(0), dp), p0)
+    trajectory = InterpolatedCurve(FloatDP(exact(0), dp), p0)
     trajectory.insert(FloatDP(exact(1), dp), p1)
     show("trajectory", trajectory)
     show("samples", trajectory.size())

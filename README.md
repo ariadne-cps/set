@@ -12,7 +12,7 @@ Ariadne Set is the standalone C++20 set-representation layer of Ariadne. It impl
 ## Layout
 
 - Public headers: `include/set/`, with umbrella header `include/ariadne-set.hpp`.
-- C++ implementations: `src/set/`.
+- C++ implementations: `src/`.
 - C++ tests: `tests/`.
 - Python binding, tests and tutorial: `python/bindings/`, `python/tests/` and `python/tutorials/`.
 - Standalone installed C++ example: `tutorials/tutorial_set/`.
