@@ -3,6 +3,7 @@ set(UNIT_TESTS
     test_affine_sets
     test_constraint_set
     test_validated_constrained_image_set
+    test_function_set_sensitivity
     test_constrained_image_set
     test_curve
     test_list_set
