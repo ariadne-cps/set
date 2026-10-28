@@ -1,9 +1,9 @@
-[submodule "ss/configuration"]
-	path = ss/configuration
+[submodule "cfg"]
+	path = ss/cfg
 	url = https://github.com/ariadne-cps/configuration
-[submodule "ss/linear-programming"]
-	path = ss/linear-programming
+[submodule "lin"]
+	path = ss/lin
 	url = https://github.com/ariadne-cps/linear-programming
-[submodule "ss/constraint-solving"]
-	path = ss/constraint-solving
+[submodule "con"]
+	path = ss/con
 	url = https://github.com/ariadne-cps/constraint-solving
