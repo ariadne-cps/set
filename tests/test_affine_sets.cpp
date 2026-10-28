@@ -190,6 +190,16 @@ class TestAffineSet
         List<Pair<double,double>> vertices=set.boundary(0,1);
         ARIADNE_TEST_ASSERT(!vertices.empty());
 
+        // Exercise verbose tracing for the constrained simplex traversal,
+        // whose per-pivot messages are not emitted for unconstrained zonotopes.
+        set.new_parameter_constraint(x[0]<=0.0_x);
+        vertices=set.boundary(0,1);
+        ARIADNE_TEST_ASSERT(vertices.size()>=4u);
+        for(auto const& vertex:vertices) {
+            ARIADNE_TEST_ASSERT(vertex.first<=1e-6);
+            ARIADNE_TEST_ASSERT(vertex.first>=-1.000001);
+        }
+
         Logger::instance().configuration().set_verbosity(old_verbosity);
     }
 
