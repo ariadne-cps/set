@@ -64,6 +64,9 @@ Void test_interpolated_curve() {
     curve.insert(InterpolatedCurve::ParameterType(1.0_x,dp),b);
     curve.insert(Dyadic(2),c);
     ARIADNE_TEST_EQUALS(curve.size(),3u);
+    // The curve's end() intentionally returns the last sample, not past-the-end.
+    ARIADNE_TEST_EQUALS(curve.end()->first,InterpolatedCurve::ParameterType(2.0_x,dp));
+    ARIADNE_TEST_ASSERT(decide(curve.end()->second==c));
 
     auto box=curve.bounding_box();
     ARIADNE_TEST_EQUALS(box.dimension(),2u);
