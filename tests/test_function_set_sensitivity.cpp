@@ -86,9 +86,9 @@ Void test_nonlinearity_ignores_smaller_rows() {
     ARIADNE_TEST_ASSERT(contributions[0][0].raw().get_d()>0.0);
     ARIADNE_TEST_EQUALS(contributions[1][0].raw().get_d(),0.0);
     ARIADNE_TEST_EQUALS(contributions[1][1].raw().get_d(),0.0);
-    auto result=nonlinearity_index_and_error(model,domain);
-    ARIADNE_TEST_EQUALS(result.first,0u);
-    ARIADNE_TEST_ASSERT(result.second.raw().get_d()>0.0);
+    auto nonlinearity=nonlinearity_index_and_error(model,domain);
+    ARIADNE_TEST_EQUALS(nonlinearity.first,0u);
+    ARIADNE_TEST_ASSERT(nonlinearity.second.raw().get_d()>0.0);
 }
 
 Void test_lipschitz_dominant_coordinate() {
