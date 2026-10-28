@@ -23,6 +23,8 @@
  */
 
 #include <iostream>
+#include <cmath>
+#include <algorithm>
 #include <memory>
 #include "function/function.hpp"
 #include "geometry/box.hpp"
@@ -243,6 +245,30 @@ class TestAffineSet
         }
     }
 
+    Void test_constrained_boundary() {
+        // A square intersected with x<=0 is a rectangle [-1,0] x [-1,1].
+        // In contrast to a zonotope, its boundary requires pivoting along
+        // the affine inequality's slack-variable constraints.
+        D=ExactBoxType::unit_box(2);
+        x=Affine<FloatDPBounds>::variables(2,dp);
+        set=ValidatedAffineConstrainedImageSet(D,{x[0],x[1]},{x[0]<=0.0_x});
+        ARIADNE_TEST_EQUALS(set.number_of_constraints(),1u);
+
+        List<Pair<double,double>> vertices=set.boundary(0,1);
+        ARIADNE_TEST_ASSERT(vertices.size()>=4u);
+        double min_x=+2.0, max_x=-2.0, min_y=+2.0, max_y=-2.0;
+        for(auto const& vertex:vertices) {
+            min_x=std::min(min_x,vertex.first);
+            max_x=std::max(max_x,vertex.first);
+            min_y=std::min(min_y,vertex.second);
+            max_y=std::max(max_y,vertex.second);
+        }
+        ARIADNE_TEST_ASSERT(std::abs(min_x+1.0)<1e-6);
+        ARIADNE_TEST_ASSERT(std::abs(max_x)<1e-6);
+        ARIADNE_TEST_ASSERT(std::abs(min_y+1.0)<1e-6);
+        ARIADNE_TEST_ASSERT(std::abs(max_y-1.0)<1e-6);
+    }
+
     Void test_large_zonotope_boundary() {
         // Keep n=501: the 501 distinct planar generators yield 2*n=1002
         // boundary vertices, deliberately exceeding the historical 1000-step
@@ -334,6 +360,7 @@ class TestAffineSet
         ARIADNE_TEST_CALL(test_constrained_image());
         ARIADNE_TEST_CALL(test_nonunit_domain());
         ARIADNE_TEST_CALL(test_separated());
+        ARIADNE_TEST_CALL(test_constrained_boundary());
         ARIADNE_TEST_CALL(test_large_zonotope_boundary());
         ARIADNE_TEST_CALL(test_collinear_negative_zonotope_boundary());
         ARIADNE_TEST_CALL(test_near_vertical_zonotope_boundary());
