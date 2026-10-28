@@ -4,6 +4,6 @@
 [submodule "lin"]
 	path = ss/lin
 	url = https://github.com/ariadne-cps/linear-programming
-[submodule "con"]
-	path = ss/con
+[submodule "csl"]
+	path = ss/csl
 	url = https://github.com/ariadne-cps/constraint-solving

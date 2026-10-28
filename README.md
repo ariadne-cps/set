@@ -23,7 +23,7 @@ Set uses three Git submodules:
 
 - [ariadne-cps/configuration](https://github.com/ariadne-cps/configuration) (`ss/cfg`): shared CMake build infrastructure.
 - [ariadne-cps/linear-programming](https://github.com/ariadne-cps/linear-programming) (`ss/lin`): linear simplex and interior-point solvers.
-- [ariadne-cps/constraint-solving](https://github.com/ariadne-cps/constraint-solving) (`ss/con`): validated constraint solving and nonlinear feasibility.
+- [ariadne-cps/constraint-solving](https://github.com/ariadne-cps/constraint-solving) (`ss/csl`): validated constraint solving and nonlinear feasibility.
 
 Linear Programming and Constraint Solving also provide Algebra, Function, Geometry, and other lower dependencies transitively. Both are built and linked by CMake.
 
