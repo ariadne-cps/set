@@ -241,7 +241,7 @@ UpperBoxType ValidatedAffineConstrainedImageSet::bounding_box() const {
 ValidatedLowerKleenean ValidatedAffineConstrainedImageSet::separated(const ExactBoxType& bx) const {
     ARIADNE_PRECONDITION_MSG(this->dimension()==bx.dimension(),"set="<<*this<<", box="<<bx);
     ExactBoxType wbx=cast_exact_box(widen(bx));
-    Matrix<FloatDP> A;
+    Matrix<FloatDP> A(0u,0u,dp);
     Vector<FloatDP> b;
     Vector<FloatDP> l;
     Vector<FloatDP> u;
