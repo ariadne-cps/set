@@ -73,6 +73,24 @@ Void test_nonlinearity_dominant_coordinate() {
     ARIADNE_TEST_EQUALS(modeled.first,1u);
 }
 
+Void test_nonlinearity_ignores_smaller_rows() {
+    // The second output has no higher-order terms: the earlier nonzero
+    // row remains the maximal one, even though another output is visited.
+    ExactBoxType domain{{-1.0_x,1.0_x},{-1.0_x,1.0_x}};
+    auto x=ValidatedScalarMultivariateFunction::coordinate(2u,0u);
+    auto y=ValidatedScalarMultivariateFunction::coordinate(2u,1u);
+    ValidatedVectorMultivariateFunction f({x*x,y});
+    ValidatedVectorMultivariateTaylorFunctionModelDP model(
+        domain,f,TrivialSweeper<FloatDP>(dp));
+    Matrix<FloatDPError> contributions=nonlinearities_zeroth_order(model,domain);
+    ARIADNE_TEST_ASSERT(contributions[0][0].raw().get_d()>0.0);
+    ARIADNE_TEST_EQUALS(contributions[1][0].raw().get_d(),0.0);
+    ARIADNE_TEST_EQUALS(contributions[1][1].raw().get_d(),0.0);
+    auto result=nonlinearity_index_and_error(model,domain);
+    ARIADNE_TEST_EQUALS(result.first,0u);
+    ARIADNE_TEST_ASSERT(result.second.raw().get_d()>0.0);
+}
+
 Void test_lipschitz_dominant_coordinate() {
     ExactBoxType domain{{-1.0_x,1.0_x},{-2.0_x,2.0_x}};
     auto x=ValidatedScalarMultivariateFunction::coordinate(2u,0u);
@@ -91,6 +109,7 @@ Void test_lipschitz_dominant_coordinate() {
 
 Int main() {
     ARIADNE_TEST_CALL(test_nonlinearity_dominant_coordinate());
+    ARIADNE_TEST_CALL(test_nonlinearity_ignores_smaller_rows());
     ARIADNE_TEST_CALL(test_lipschitz_dominant_coordinate());
     return ARIADNE_TEST_FAILURES;
 }
