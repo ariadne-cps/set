@@ -24,11 +24,7 @@
 
 #include <iostream>
 #include <string>
-#include "function/function.hpp"
-#include "set/function_set.hpp"
-#include "set/affine_set.hpp"
-#include "set/curve.hpp"
-#include "set/list_set.hpp"
+#include "ariadne-set.hpp"
 #include "geometry/point.hpp"
 #include "geometry/box.hpp"
 using namespace Ariadne;

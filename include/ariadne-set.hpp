@@ -32,8 +32,5 @@
 #include "set/function_set.hpp"
 #include "set/list_set.hpp"
 #include "set/multifunction_image.hpp"
-#include "set/polyhedron.hpp"
-#include "set/polytope.hpp"
-#include "set/zonotope.hpp"
 
 #endif // ARIADNE_SET_MODULE_HPP
