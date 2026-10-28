@@ -1,5 +1,5 @@
-/****************************************************************************
- *            geometry/polytope.hpp
+/***************************************************************************
+ *            polytope.hpp
  *
  *  Copyright  2005-20  Alberto Casagrande, Pieter Collins
  *
@@ -25,7 +25,7 @@
 #ifndef ARIADNE_POLYTOPE_HPP
 #define ARIADNE_POLYTOPE_HPP
 
-/*! \file geometry/polytope.hpp
+/*! \file set/polytope.hpp
  *  \brief Polytope class for geometry output.
  */
 

@@ -1,5 +1,5 @@
 /***************************************************************************
- *            geometry/list_set.hpp
+ *            list_set.hpp
  *
  *  Copyright  2008-20  Alberto Casagrande, Pieter Collins
  *
@@ -22,7 +22,7 @@
  *  along with Ariadne.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/*! \file geometry/list_set.hpp
+/*! \file set/list_set.hpp
  *  \brief Sets which are lists of simple shapes.
  */
 

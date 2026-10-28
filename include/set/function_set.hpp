@@ -1,5 +1,5 @@
 /***************************************************************************
- *            geometry/function_set.hpp
+ *            function_set.hpp
  *
  *  Copyright  2008-20  Pieter Collins
  *
@@ -22,7 +22,7 @@
  *  along with Ariadne.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/*! \file geometry/function_set.hpp
+/*! \file set/function_set.hpp
  *  \brief Images and preimages of boxes in Euclidean space.
  */
 

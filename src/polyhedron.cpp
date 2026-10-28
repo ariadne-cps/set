@@ -1,5 +1,5 @@
 /***************************************************************************
- *            geometry/polyhedron.cpp
+ *            polyhedron.cpp
  *
  *  Copyright  2006-20  Alberto Casagrande, Pieter Collins
  *

@@ -1,5 +1,5 @@
 /***************************************************************************
- *            geometry/curve.cpp
+ *            curve.cpp
  *
  *  Copyright  2007-20  Pieter Collins
  *

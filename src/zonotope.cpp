@@ -1,5 +1,5 @@
 /***************************************************************************
- *            geometry/zonotope.cpp
+ *            zonotope.cpp
  *
  *  Copyright  2008-20  Alberto Casagrande, Pieter Collins
  *
