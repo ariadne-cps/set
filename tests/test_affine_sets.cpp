@@ -383,21 +383,18 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture
 
 int main(int argc, char** argv) {
     ARIADNE_TESTING_SUITE("test_affine_sets");
-    // Use the official fixture variant lifecycle to avoid GCC's false
-    // -Wmaybe-uninitialized at the pointer-to-member registration boundary.
-    auto variant_1 = Ariadne::Testing::fixture_variant<TestAffineSet>(ariadne_test_suite, "TestAffineSet");
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_basic_coverage);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_empty);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_invalid);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_pure_constraint);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_constrained_image);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_nonunit_domain);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_separated);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_constrained_boundary);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_empty_constrained_boundary);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_large_zonotope_boundary);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_collinear_negative_zonotope_boundary);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_near_vertical_zonotope_boundary);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_logging_branches);
+    ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_basic_coverage);
+    ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_empty);
+    ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_invalid);
+    ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_pure_constraint);
+    ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_constrained_image);
+    ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_nonunit_domain);
+    ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_separated);
+    ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_constrained_boundary);
+    ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_empty_constrained_boundary);
+    ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_large_zonotope_boundary);
+    ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_collinear_negative_zonotope_boundary);
+    ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_near_vertical_zonotope_boundary);
+    ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_logging_branches);
     return ARIADNE_TESTING_RUN_TESTS_WITH_ARGS(argc, argv);
 }

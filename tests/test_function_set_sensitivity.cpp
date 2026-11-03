@@ -115,11 +115,8 @@ Void test_lipschitz_dominant_coordinate() {
 
 int main(int argc, char** argv) {
     ARIADNE_TESTING_SUITE("test_function_set_sensitivity");
-    // Use the official fixture variant lifecycle to avoid GCC's false
-    // -Wmaybe-uninitialized at the pointer-to-member registration boundary.
-    auto variant_1 = Ariadne::Testing::fixture_variant<TestFunctionSetSensitivity>(ariadne_test_suite, "TestFunctionSetSensitivity");
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_nonlinearity_dominant_coordinate);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_nonlinearity_ignores_smaller_rows);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_lipschitz_dominant_coordinate);
+    ARIADNE_TESTING_ADD_TEST(TestFunctionSetSensitivity, test_nonlinearity_dominant_coordinate);
+    ARIADNE_TESTING_ADD_TEST(TestFunctionSetSensitivity, test_nonlinearity_ignores_smaller_rows);
+    ARIADNE_TESTING_ADD_TEST(TestFunctionSetSensitivity, test_lipschitz_dominant_coordinate);
     return ARIADNE_TESTING_RUN_TESTS_WITH_ARGS(argc, argv);
 }

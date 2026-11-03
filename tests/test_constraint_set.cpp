@@ -128,9 +128,6 @@ class TestConstraintSet : public Ariadne::Testing::ContextFixture {
 
 int main(int argc, char** argv) {
     ARIADNE_TESTING_SUITE("test_constraint_set");
-    // Use the official fixture variant lifecycle to avoid GCC's false
-    // -Wmaybe-uninitialized at the pointer-to-member registration boundary.
-    auto variant_1 = Ariadne::Testing::fixture_variant<TestConstraintSet>(ariadne_test_suite, "TestConstraintSet");
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_constraint_sets);
+    ARIADNE_TESTING_ADD_TEST(TestConstraintSet, test_constraint_sets);
     return ARIADNE_TESTING_RUN_TESTS_WITH_ARGS(argc, argv);
 }

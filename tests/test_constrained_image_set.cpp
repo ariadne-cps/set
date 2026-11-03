@@ -256,20 +256,14 @@ class TestValidatedConstrainedImageSet : public Ariadne::Testing::ContextFixture
 
 int main(int argc, char** argv) {
     ARIADNE_TESTING_SUITE("test_constrained_image_set");
-    // Use the official fixture variant lifecycle to avoid GCC's false
-    // -Wmaybe-uninitialized at the pointer-to-member registration boundary.
-    auto variant_1 = Ariadne::Testing::fixture_variant<TestConstrainedImageSet>(ariadne_test_suite, "TestConstrainedImageSet");
-    // Use the official fixture variant lifecycle to avoid GCC's false
-    // -Wmaybe-uninitialized at the pointer-to-member registration boundary.
-    auto variant_2 = Ariadne::Testing::fixture_variant<TestValidatedConstrainedImageSet>(ariadne_test_suite, "TestValidatedConstrainedImageSet");
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_interval_constructor);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_constructor);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_domain);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_geometry);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_separated);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_split);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_affine_approximation);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_2, test_construct);
-    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_2, test_geometry);
+    ARIADNE_TESTING_ADD_TEST(TestConstrainedImageSet, test_interval_constructor);
+    ARIADNE_TESTING_ADD_TEST(TestConstrainedImageSet, test_constructor);
+    ARIADNE_TESTING_ADD_TEST(TestConstrainedImageSet, test_domain);
+    ARIADNE_TESTING_ADD_TEST(TestConstrainedImageSet, test_geometry);
+    ARIADNE_TESTING_ADD_TEST(TestConstrainedImageSet, test_separated);
+    ARIADNE_TESTING_ADD_TEST(TestConstrainedImageSet, test_split);
+    ARIADNE_TESTING_ADD_TEST(TestConstrainedImageSet, test_affine_approximation);
+    ARIADNE_TESTING_ADD_TEST(TestValidatedConstrainedImageSet, test_construct);
+    ::Ariadne::Testing::add_fixture_test<TestValidatedConstrainedImageSet, &TestValidatedConstrainedImageSet::test_geometry>(ariadne_test_suite, "validated_geometry");
     return ARIADNE_TESTING_RUN_TESTS_WITH_ARGS(argc, argv);
 }
