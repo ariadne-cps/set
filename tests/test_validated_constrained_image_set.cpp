@@ -210,10 +210,13 @@ Void test_join_image_sets() {
 
 int main(int argc, char** argv) {
     ARIADNE_TESTING_SUITE("test_validated_constrained_image_set");
-    ARIADNE_TESTING_ADD_TEST(TestValidatedConstrainedImageSetSuite, test_split_chooses_widest_parameter);
-    ARIADNE_TESTING_ADD_TEST(TestValidatedConstrainedImageSetSuite, test_join_image_sets);
-    ARIADNE_TESTING_ADD_TEST(TestValidatedConstrainedImageSetSuite, test_default_image_sets);
-    ARIADNE_TESTING_ADD_TEST(TestValidatedConstrainedImageSetSuite, test_validated_image_operations);
-    ARIADNE_TESTING_ADD_TEST(TestValidatedConstrainedImageSetSuite, test_one_sided_satisfaction);
+    // Use the official fixture variant lifecycle to avoid GCC's false
+    // -Wmaybe-uninitialized at the pointer-to-member registration boundary.
+    auto variant_1 = Ariadne::Testing::fixture_variant<TestValidatedConstrainedImageSetSuite>(ariadne_test_suite, "TestValidatedConstrainedImageSetSuite");
+    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_split_chooses_widest_parameter);
+    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_join_image_sets);
+    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_default_image_sets);
+    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_validated_image_operations);
+    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_one_sided_satisfaction);
     return ARIADNE_TESTING_RUN_TESTS_WITH_ARGS(argc, argv);
 }

@@ -72,6 +72,9 @@ class TestMultifunctionImage : public Ariadne::Testing::ContextFixture {
 
 int main(int argc, char** argv) {
     ARIADNE_TESTING_SUITE("test_multifunction_image");
-    ARIADNE_TESTING_ADD_TEST(TestMultifunctionImage, test_multifunction_image);
+    // Use the official fixture variant lifecycle to avoid GCC's false
+    // -Wmaybe-uninitialized at the pointer-to-member registration boundary.
+    auto variant_1 = Ariadne::Testing::fixture_variant<TestMultifunctionImage>(ariadne_test_suite, "TestMultifunctionImage");
+    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_multifunction_image);
     return ARIADNE_TESTING_RUN_TESTS_WITH_ARGS(argc, argv);
 }

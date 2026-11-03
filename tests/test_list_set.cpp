@@ -80,6 +80,9 @@ class TestListSet : public Ariadne::Testing::ContextFixture {
 
 int main(int argc, char** argv) {
     ARIADNE_TESTING_SUITE("test_list_set");
-    ARIADNE_TESTING_ADD_TEST(TestListSet, test_list_set);
+    // Use the official fixture variant lifecycle to avoid GCC's false
+    // -Wmaybe-uninitialized at the pointer-to-member registration boundary.
+    auto variant_1 = Ariadne::Testing::fixture_variant<TestListSet>(ariadne_test_suite, "TestListSet");
+    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_list_set);
     return ARIADNE_TESTING_RUN_TESTS_WITH_ARGS(argc, argv);
 }

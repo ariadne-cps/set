@@ -141,8 +141,11 @@ Void test_interpolated_curve() {
 
 int main(int argc, char** argv) {
     ARIADNE_TESTING_SUITE("test_curve");
-    ARIADNE_TESTING_ADD_TEST(TestCurve, test_curve_overloads_and_drawing);
-    ARIADNE_TESTING_ADD_TEST(TestCurve, test_function_curve);
-    ARIADNE_TESTING_ADD_TEST(TestCurve, test_interpolated_curve);
+    // Use the official fixture variant lifecycle to avoid GCC's false
+    // -Wmaybe-uninitialized at the pointer-to-member registration boundary.
+    auto variant_1 = Ariadne::Testing::fixture_variant<TestCurve>(ariadne_test_suite, "TestCurve");
+    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_curve_overloads_and_drawing);
+    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_function_curve);
+    ARIADNE_TESTING_ADD_VARIANT_TEST(variant_1, test_interpolated_curve);
     return ARIADNE_TESTING_RUN_TESTS_WITH_ARGS(argc, argv);
 }
