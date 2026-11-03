@@ -34,7 +34,11 @@
 
 using namespace Ariadne;
 
-Void test_function_curve() {
+class TestCurve : public Ariadne::Testing::ContextFixture {
+  public:
+    using ContextFixture::ContextFixture;
+
+    Void test_function_curve() {
     auto x=EffectiveScalarUnivariateFunction::coordinate();
     EffectiveVectorUnivariateFunction f({x,x*x});
     Curve curve(f);
@@ -98,12 +102,6 @@ Void test_interpolated_curve() {
     repr<<curve;
     ARIADNE_TESTING_PROVE(repr.str().find("InterpolatedCurve( size=3")!=std::string::npos);
 }
-
-;
-
-class TestCurve : public Ariadne::Testing::ContextFixture {
-  public:
-    using ContextFixture::ContextFixture;
 
     Void test_curve_overloads_and_drawing() {
     using P=InterpolatedCurve::PointType;

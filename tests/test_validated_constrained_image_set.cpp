@@ -30,7 +30,11 @@
 #include <sstream>
 using namespace Ariadne;
 
-Void test_default_image_sets() {
+class TestValidatedConstrainedImageSetSuite : public Ariadne::Testing::ContextFixture {
+  public:
+    using ContextFixture::ContextFixture;
+
+    Void test_default_image_sets() {
     ConstrainedImageSet effective;
     ValidatedConstrainedImageSet validated;
     ARIADNE_TESTING_EXPECT_EQUAL(effective.dimension(),0u);
@@ -177,10 +181,6 @@ Void test_join_image_sets() {
     std::ostringstream text; predicate_copy->_write(text);
     ARIADNE_TESTING_PROVE(!text.str().empty());
 }
-
-class TestValidatedConstrainedImageSetSuite : public Ariadne::Testing::ContextFixture {
-  public:
-    using ContextFixture::ContextFixture;
 
     Void test_split_chooses_widest_parameter() {
     // With three coordinates, the largest domain radius belongs to coordinate 1.
