@@ -463,7 +463,7 @@ OutputStream& operator<<(OutputStream& os, BoundedConstraintSet const& bcs) {
 
 
 ConstrainedImageSet::ConstrainedImageSet(const BoundedConstraintSet& set)
-    : _domain(over_approximation(set.domain())), _function(EffectiveVectorMultivariateFunction::identity(set.dimension()))
+    : _domain(set.domain()), _function(EffectiveVectorMultivariateFunction::identity(set.dimension()))
 {
     for(SizeType i=0; i!=set.number_of_constraints(); ++i) {
         this->new_parameter_constraint(set.constraint(i));
