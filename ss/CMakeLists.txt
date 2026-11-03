@@ -5,3 +5,5 @@ endif()
 if(NOT TARGET constraint_solving)
     ariadne_add_submodule(constraint-solving)
 endif()
+
+ariadne_setup_testing()

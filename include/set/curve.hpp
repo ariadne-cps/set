@@ -31,7 +31,7 @@
 
 #include <memory>
 
-#include "macro/general.hpp"
+#include "utility/macros.hpp"
 #include "utility/stlio.hpp"
 #include "function/function.hpp"
 #include "geometry/box.decl.hpp"

@@ -32,7 +32,7 @@
 
 #include <vector>
 #include "utility/stlio.hpp"
-#include "macro/general.hpp"
+#include "utility/macros.hpp"
 
 
 #include "geometry/box.hpp"

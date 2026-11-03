@@ -27,11 +27,15 @@
 #include "algebra/sweeper.hpp"
 #include "set/multifunction_image.hpp"
 #include "function/taylor_function.hpp"
-#include "macro/testing.hpp"
+#include "ariadne-testing.hpp"
 
 using namespace Ariadne;
 
-Void test_multifunction_image()
+class TestMultifunctionImage : public Ariadne::Testing::ContextFixture {
+  public:
+    using ContextFixture::ContextFixture;
+
+    Void test_multifunction_image()
 {
     auto x0=EffectiveScalarMultivariateFunction::coordinate(3,0);
     auto x1=EffectiveScalarMultivariateFunction::coordinate(3,1);
@@ -44,27 +48,30 @@ Void test_multifunction_image()
 
     Sweeper<FloatDP> swp;
 
-    ARIADNE_TEST_CONSTRUCT(ValidatedVectorMultivariateMultifunctionPatch,mvfp,(f,prms));
-    ARIADNE_TEST_CONSTRUCT(ValidatedVectorMultivariateMultifunction,mvf,(mvfp));
+    ValidatedVectorMultivariateMultifunctionPatch mvfp(f,prms); ARIADNE_TESTING_NOTE("Constructed ValidatedVectorMultivariateMultifunctionPatch mvfp = " << mvfp);
+    ValidatedVectorMultivariateMultifunction mvf(mvfp); ARIADNE_TESTING_NOTE("Constructed ValidatedVectorMultivariateMultifunction mvf = " << mvf);
 
-    ARIADNE_TEST_CONSTRUCT(ValidatedVectorMultivariateMultifunctionModel<DP>,mvfmdp,(dom,f,prms,swp));;
-    ARIADNE_TEST_CONSTRUCT(ValidatedVectorMultivariateMultifunctionModel<DP>,mvfdp,(mvfmdp));;
+    ValidatedVectorMultivariateMultifunctionModel<DP> mvfmdp(dom,f,prms,swp); ARIADNE_TESTING_NOTE("Constructed ValidatedVectorMultivariateMultifunctionModel<DP> mvfmdp = " << mvfmdp);;
+    ValidatedVectorMultivariateMultifunctionModel<DP> mvfdp(mvfmdp); ARIADNE_TESTING_NOTE("Constructed ValidatedVectorMultivariateMultifunctionModel<DP> mvfdp = " << mvfdp);;
 
     // The first two coordinates are inputs; the final coordinate is uncertainty.
-    ARIADNE_TEST_EQUALS(mvfp.argument_size(),2u);
-    ARIADNE_TEST_EQUALS(mvfp.error_domain().dimension(),1u);
-    ARIADNE_TEST_EQUALS(mvfmdp.argument_size(),2u);
-    ARIADNE_TEST_EQUALS(mvfmdp.domain().dimension(),2u);
-    ARIADNE_TEST_EQUALS(mvfmdp.error_domain().dimension(),1u);
+    ARIADNE_TESTING_EXPECT_EQUAL(mvfp.argument_size(),2u);
+    ARIADNE_TESTING_EXPECT_EQUAL(mvfp.error_domain().dimension(),1u);
+    ARIADNE_TESTING_EXPECT_EQUAL(mvfmdp.argument_size(),2u);
+    ARIADNE_TESTING_EXPECT_EQUAL(mvfmdp.domain().dimension(),2u);
+    ARIADNE_TESTING_EXPECT_EQUAL(mvfmdp.error_domain().dimension(),1u);
 
     Vector<ValidatedNumber> v(2,1);
-    ARIADNE_TEST_ASSIGN_CONSTRUCT(ValidatedLocatedSet<RealVector>,res,mvfp(v));
-    ARIADNE_TEST_ASSIGN(res,mvf(v));
-    ARIADNE_TEST_ASSIGN(res,mvfmdp(v));
-    ARIADNE_TEST_ASSIGN(res,mvfdp(v));
+    ValidatedLocatedSet<RealVector> res = mvfp(v); ARIADNE_TESTING_NOTE("Assigned ValidatedLocatedSet<RealVector> res = " << res);
+    res = (mvf(v)); ARIADNE_TESTING_NOTE("Assigned res = " << res);
+    res = (mvfmdp(v)); ARIADNE_TESTING_NOTE("Assigned res = " << res);
+    res = (mvfdp(v)); ARIADNE_TESTING_NOTE("Assigned res = " << res);
 }
 
-Int main() {
-    ARIADNE_TEST_CALL(test_multifunction_image());
-    return ARIADNE_TEST_FAILURES;
+};
+
+int main(int argc, char** argv) {
+    ARIADNE_TESTING_SUITE("test_multifunction_image");
+    ARIADNE_TESTING_ADD_TEST(TestMultifunctionImage, test_multifunction_image);
+    return ARIADNE_TESTING_RUN_TESTS_WITH_ARGS(argc, argv);
 }

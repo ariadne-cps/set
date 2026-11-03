@@ -22,11 +22,21 @@ if(EXISTS "${PROJECT_SOURCE_DIR}/.git")
             "configuration"
             "linear-programming|configuration"
             "constraint-solving|configuration"
+            "testing|configuration"
+            "linear-programming|testing|configuration"
+            "constraint-solving|testing|configuration"
     )
     require_same_dependency_commit(Algebra
         CHAINS
             "linear-programming|algebra"
             "constraint-solving|nonlinear-programming|function|geometry|algebra"
+    )
+    require_same_dependency_commit(Testing
+        CHAINS
+            "testing"
+            "linear-programming|testing"
+            "constraint-solving|testing"
+            "constraint-solving|nonlinear-programming|testing"
     )
 endif()
 
