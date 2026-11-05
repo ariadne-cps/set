@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Ariadne.  If not, see <https://www.gnu.org/licenses/>.
 
-from pyariadne import *
+from pyariadne_set import *
 
 def test_validated_constrained_image_set_dimension():
     """The image dimension is independent of its parameter-domain dimension."""

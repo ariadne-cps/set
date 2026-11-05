@@ -81,17 +81,6 @@ jobs:
       working-directory: ${{ runner.workspace }}/build
       run: cmake --install . --prefix "${{ runner.workspace }}/install"
 
-    - name: Check Python Set Tutorial
-      if: matrix.build_type == 'Release'
-      shell: pwsh
-      working-directory: ${{ github.workspace }}/python/tutorials
-      run: |
-        $env:PYTHONPATH = "${{ runner.workspace }}\install\Lib\site-packages"
-        $env:PATH = "${{ runner.workspace }}\install\bin;$env:PATH"
-        python -c "import pyariadne; print(pyariadne.__file__)"
-        python tutorial_set.py
-
-
     - name: Prepare C++ Set Tutorial
       if: matrix.build_type == 'Release'
       shell: pwsh
@@ -107,6 +96,17 @@ jobs:
         $env:PATH = "${{ runner.workspace }}\install\bin;$env:PATH"
         & ".\build\tutorial_set.exe"
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+
+    - name: Check Python Set Tutorial
+      if: matrix.build_type == 'Release'
+      shell: pwsh
+      working-directory: ${{ github.workspace }}/python/tutorials
+      run: |
+        $env:PYTHONPATH = "${{ runner.workspace }}\install\Lib\site-packages"
+        $env:PATH = "${{ runner.workspace }}\install\bin;$env:PATH"
+        python -c "import pyariadne_set; print(pyariadne_set.__file__)"
+        python tutorial_set.py
 
 
     - name: Verify Uninstallation

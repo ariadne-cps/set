@@ -58,7 +58,3 @@ With Python 3.11 or newer and a matching development environment, the build cont
 ## Contribution guidelines
 
 Please contact the developer: Luca Geretti <luca.geretti@univr.it>.
-
-## License
-
-Ariadne Set is released under the GNU General Public License v3.0 (or later where individual source files specify it).

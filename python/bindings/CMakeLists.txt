@@ -26,4 +26,5 @@ target_include_directories(pyariadne-set INTERFACE
     $<TARGET_PROPERTY:pyariadne-constraint_solving,INTERFACE_INCLUDE_DIRECTORIES>
 )
 target_link_libraries(pyariadne-set INTERFACE pyariadne-linear_programming pyariadne-constraint_solving)
-ariadne_add_python_module(NAME set MODULE_SOURCE set_module.cpp)
+ariadne_add_python_module(NAME set
+    MODULE_IMPORT_NAME pyariadne_set MODULE_SOURCE set_module.cpp)

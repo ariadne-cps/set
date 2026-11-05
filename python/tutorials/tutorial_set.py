@@ -18,7 +18,7 @@
 # along with Ariadne.  If not, see <https://www.gnu.org/licenses/>.
 
 """Concrete sets and curves: companion to tutorial_set.cpp."""
-from pyariadne import *
+from pyariadne_set import *
 
 def section(title):
     print(f"\n== {title} ==")
