@@ -8,6 +8,7 @@
 [![codecov](https://codecov.io/gh/ariadne-cps/set/branch/main/graph/badge.svg)](https://codecov.io/gh/ariadne-cps/set)
 
 Ariadne Set is the standalone C++20 set-representation layer of Ariadne. It implements constrained and validated image sets, affine constrained image sets, curves and interpolated curves, and list sets.
+Although independently maintained and usable, this repository is also part of the [Ariadne repository structure](https://github.com/ariadne-cps/ariadne/blob/main/doc/structure.md).
 
 ## Layout
 
@@ -21,7 +22,7 @@ Ariadne Set is the standalone C++20 set-representation layer of Ariadne. It impl
 
 Set uses three Git submodules:
 
-- [ariadne-cps/configuration](https://github.com/ariadne-cps/configuration) (`ss/cfg`): shared CMake build infrastructure.
+- [ariadne-cps/build](https://github.com/ariadne-cps/build) (`ss/cfg`): shared CMake build infrastructure.
 - [ariadne-cps/linear-programming](https://github.com/ariadne-cps/linear-programming) (`ss/lin`): linear simplex and interior-point solvers.
 - [ariadne-cps/constraint-solving](https://github.com/ariadne-cps/constraint-solving) (`ss/csl`): validated constraint solving and nonlinear feasibility.
 

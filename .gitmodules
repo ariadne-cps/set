@@ -1,6 +1,6 @@
-[submodule "cfg"]
-	path = ss/cfg
-	url = https://github.com/ariadne-cps/configuration
+[submodule "bui"]
+	path = ss/bui
+	url = https://github.com/ariadne-cps/build
 [submodule "lin"]
 	path = ss/lin
 	url = https://github.com/ariadne-cps/linear-programming
