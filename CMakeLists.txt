@@ -28,9 +28,6 @@ if(EXISTS "${PROJECT_SOURCE_DIR}/.git")
     require_same_dependency_commit(Algebra CHAINS
         "linear-programming|algebra"
         "constraint-solving|nonlinear-programming|function|geometry|algebra")
-    require_same_dependency_commit(Testing CHAINS
-        "testing" "linear-programming|testing"
-        "constraint-solving|testing")
 endif()
 
 setup_project()
