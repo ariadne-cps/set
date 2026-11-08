@@ -43,6 +43,38 @@ class TestConstrainedImageSet : public Ariadne::Testing::ContextFixture
   public:
     using ContextFixture::ContextFixture;
 
+    Void test_prepared_separation_lifetime() {
+        auto x=EffectiveScalarMultivariateFunction::coordinates(2);
+        ConstrainedImageSet source(
+            RealBox({RealInterval(-1,+1),RealInterval(-1,+1)}),
+            EffectiveVectorMultivariateFunction({x[0],x[1]}));
+        source.new_parameter_constraint(x[0]*x[0]+x[1]*x[1]<=1);
+        auto const prepared=source.prepare_separation();
+        auto const copy=prepared;
+        std::vector<ExactBoxType> boxes({
+            ExactBoxType({{1.5_x,2.0_x},{0.0_x,1.0_x}}),
+            ExactBoxType({{-0.25_x,0.25_x},{-0.25_x,0.25_x}}),
+            ExactBoxType({{0.5_x,1.0_x},{0.5_x,1.0_x}})
+        });
+        for(SizeType rep=0u;rep<3u;++rep) {
+            for(auto const& box:boxes) {
+                auto const original=source.separated(box,Effort::get_default());
+                auto const a=prepared.separated(box);
+                auto const b=copy.separated(box);
+                ARIADNE_TESTING_EXPECT_EQUAL(definitely(original),definitely(a));
+                ARIADNE_TESTING_EXPECT_EQUAL(definitely(original),definitely(b));
+                ARIADNE_TESTING_EXPECT_EQUAL(possibly(original),possibly(a));
+                ARIADNE_TESTING_EXPECT_EQUAL(possibly(original),possibly(b));
+            }
+        }
+        auto const before=prepared.separated(boxes[1]);
+        source.apply(EffectiveVectorMultivariateFunction({
+            x[0]+3*x[1],x[1]}));
+        auto const after=prepared.separated(boxes[1]);
+        ARIADNE_TESTING_EXPECT_EQUAL(definitely(before),definitely(after));
+        ARIADNE_TESTING_EXPECT_EQUAL(possibly(before),possibly(after));
+    }
+
     Void test_interval_constructor() {
         ExactIntervalType ivl(-4.0_x,4.0_x);
         ivl=ExactIntervalType{-4.0_x,4.0_x};
@@ -257,6 +289,7 @@ class TestValidatedConstrainedImageSet : public Ariadne::Testing::ContextFixture
 int main(int argc, char** argv) {
     ARIADNE_TESTING_SUITE("test_constrained_image_set");
     ARIADNE_TESTING_ADD_TEST(TestConstrainedImageSet, test_interval_constructor);
+    ARIADNE_TESTING_ADD_TEST(TestConstrainedImageSet, test_prepared_separation_lifetime);
     ARIADNE_TESTING_ADD_TEST(TestConstrainedImageSet, test_constructor);
     ARIADNE_TESTING_ADD_TEST(TestConstrainedImageSet, test_domain);
     ARIADNE_TESTING_ADD_TEST(TestConstrainedImageSet, test_geometry);

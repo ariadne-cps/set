@@ -579,6 +579,42 @@ ValidatedLowerKleenean ConstrainedImageSet::separated(const ExactBoxType& bx, Ef
     return subdomain.is_empty();
 }
 
+struct PreparedConstrainedImageSetSeparation::Data {
+    UpperBoxType initial_domain;
+    ValidatedVectorMultivariateFunction function;
+    ExactBoxType fixed_codomain;
+    PreparedConstraintSolverFunction compiled;
+
+    explicit Data(const ConstrainedImageSet& set)
+        : initial_domain(over_approximation(set.domain()))
+        , function(join(set.function(),set.constraint_function()))
+        , fixed_codomain(
+              ExactBoxType(over_approximation(set.constraint_bounds())))
+        , compiled(function) { }
+};
+
+PreparedConstrainedImageSetSeparation::PreparedConstrainedImageSetSeparation(
+        const ConstrainedImageSet& set)
+    : _data(std::make_shared<const Data>(set)) { }
+
+PreparedConstrainedImageSetSeparation
+ConstrainedImageSet::prepare_separation() const {
+    return PreparedConstrainedImageSetSeparation(*this);
+}
+
+UpperBoxType PreparedConstrainedImageSetSeparation::reduced_domain(
+        const ExactBoxType& box) const {
+    UpperBoxType result=_data->initial_domain;
+    ConstraintSolver solver;
+    solver.reduce(result,_data->compiled,product(box,_data->fixed_codomain));
+    return result;
+}
+
+ValidatedLowerKleenean PreparedConstrainedImageSetSeparation::separated(
+        const ExactBoxType& box) const {
+    return this->reduced_domain(box).is_empty();
+}
+
 ValidatedLowerKleenean ConstrainedImageSet::overlaps(const ExactBoxType& bx, Effort) const
 {
     return ValidatedConstrainedImageSet(under_approximation(this->_domain),this->_function,this->_constraints).overlaps(bx);

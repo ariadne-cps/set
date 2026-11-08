@@ -53,6 +53,7 @@ class ImageSet;
 class ConstraintSet;
 class BoundedConstraintSet;
 class ConstrainedImageSet;
+class PreparedConstrainedImageSetSeparation;
 
 typedef ImageSet EffectiveImageSet;
 typedef ConstraintSet EffectiveConstraintSet;
@@ -254,6 +255,8 @@ class ConstrainedImageSet
 
     ValidatedLowerKleenean inside(const ExactBoxType&, Effort) const;
     ValidatedLowerKleenean separated(const ExactBoxType&, Effort) const;
+    //! \brief An explicit immutable snapshot for repeated separation queries.
+    PreparedConstrainedImageSetSeparation prepare_separation() const;
     ValidatedLowerKleenean overlaps(const ExactBoxType&, Effort) const;
 
     //! \brief Test if the set satisfies the state constraint at all points.
@@ -276,6 +279,19 @@ class ConstrainedImageSet
 //! \ingroup GeometryModule ExactSetSubModule
 //! \brief A set defined as the image of the intersection of a box \f$D\f$ and a constraint set \f$g^{-1}(C)\f$ under a function \f$f\f$.
 //! In other words, \f$S=f(D\cap g^{-1}(C))\f$.
+//! \brief Caller-owned snapshot of the constrained set for separation.
+//! \details Owns all functions, bounds and hull instructions. Later
+//! mutations of the source set do not modify this snapshot. There is no
+//! global cache or implicit invalidation; queries use separate scratch data.
+class PreparedConstrainedImageSetSeparation {
+    struct Data;
+    std::shared_ptr<const Data> _data;
+  public:
+    explicit PreparedConstrainedImageSetSeparation(const ConstrainedImageSet& set);
+    ValidatedLowerKleenean separated(const ExactBoxType& box) const;
+    UpperBoxType reduced_domain(const ExactBoxType& box) const;
+};
+
 class ValidatedConstrainedImageSet
     : public virtual ValidatedEuclideanLocatedSetInterface
 
