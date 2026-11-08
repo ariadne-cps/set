@@ -20,11 +20,11 @@ if(NOT TARGET ariadne-build)
 endif()
 
 if(EXISTS "${PROJECT_SOURCE_DIR}/.git")
-    # Pinned subprojects guarantee internal consistency. Keep the Algebra
-    # comparison across independent branches, but avoid redundant descendants.
+    # Compare production dependency commits across independent branches.
+    # Testing is development-only and deliberately excluded from consistency checks.
     require_same_dependency_commit(Build CHAINS
         "build" "linear-programming|build"
-        "constraint-solving|build" "testing|build")
+        "constraint-solving|build")
     require_same_dependency_commit(Algebra CHAINS
         "linear-programming|algebra"
         "constraint-solving|nonlinear-programming|function|geometry|algebra")
@@ -57,7 +57,7 @@ setup_project_library(
     LINK_LIBRARIES set
 )
 
-setup_standalone_project_tests(
+setup_standalone_project(
     TARGET ariadne-set
     TEST_DIRECTORY tests
     TEST_TARGET tests
