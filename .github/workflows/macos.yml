@@ -81,7 +81,7 @@ jobs:
 
     - name: Prepare C++ Set Tutorial
       if: matrix.build_type == 'Release'
-      run: cmake -E copy_directory $GITHUB_WORKSPACE/tutorials/tutorial_set ${{ runner.workspace }}/tutorial_set
+      run: cmake -E copy_directory $GITHUB_WORKSPACE/tutorial ${{ runner.workspace }}/tutorial_set
 
     - name: Check C++ Set Tutorial
       if: matrix.build_type == 'Release'
@@ -96,7 +96,7 @@ jobs:
 
     - name: Check Python Set Tutorial
       if: matrix.build_type == 'Release'
-      working-directory: ${{ github.workspace }}/python/tutorials
+      working-directory: ${{ github.workspace }}/tutorial
       env:
         PYTHONPATH: ${{ runner.workspace }}/install/lib/python3.13/site-packages
         LD_LIBRARY_PATH: ${{ runner.workspace }}/install/lib

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(Set VERSION 1.0)
+project(Set VERSION 3.0)
 
 option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 option(BUILD_PYTHON_BINDINGS "Build Python bindings" ON)
@@ -19,60 +19,13 @@ if(NOT TARGET ariadne-build)
     include("${CMAKE_CURRENT_SOURCE_DIR}/ss/bui/cmake/ProjectOptions.cmake")
 endif()
 
-if(EXISTS "${PROJECT_SOURCE_DIR}/.git")
-    # Compare production dependency commits across independent branches.
-    # Testing is development-only and deliberately excluded from consistency checks.
-    require_same_dependency_commit(Build CHAINS
-        "build" "linear-programming|build"
-        "constraint-solving|build")
-    require_same_dependency_commit(Algebra CHAINS
-        "linear-programming|algebra"
-        "constraint-solving|nonlinear-programming|function|geometry|algebra")
-endif()
+# Enforce both convergence points across Set's independent functional paths.
+# These checks run only when Set is the compilation root.
+require_same_dependency_commit(Build CHAINS
+    "build" "linear-programming|build"
+    "constraint-solving|build")
+require_same_dependency_commit(Algebra CHAINS
+    "linear-programming|algebra"
+    "constraint-solving|nonlinear-programming|function|geometry|algebra")
 
-setup_project()
-
-include_directories(${PROJECT_SOURCE_DIR}/include)
-add_subdirectory(ss)
-
-add_library(set INTERFACE)
-target_include_directories(set INTERFACE
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include/ariadne-set>
-)
-target_link_libraries(set INTERFACE linear_programming constraint_solving)
-
-add_subdirectory(src)
-target_link_libraries(SET_SRC PRIVATE set)
-
-ariadne_register_public_headers(
-    TARGET set
-    DIRECTORIES "${PROJECT_SOURCE_DIR}/include/set"
-    FILES "${PROJECT_SOURCE_DIR}/include/ariadne-set.hpp"
-)
-
-setup_project_library(
-    TARGET ariadne-set
-    OBJECTS SET_SRC
-    LINK_LIBRARIES set
-)
-
-setup_standalone_project(
-    TARGET ariadne-set
-    TEST_DIRECTORY tests
-    TEST_TARGET tests
-    SOURCES
-        "${PROJECT_SOURCE_DIR}/include"
-        "${PROJECT_SOURCE_DIR}/src"
-)
-
-if(BUILD_PYTHON_BINDINGS)
-    add_subdirectory(python)
-endif()
-
-if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
-    ariadne_install_dependency_bundle(
-        TARGET set
-        DESTINATION include/ariadne-set
-    )
-endif()
+ariadne_setup_module(set)

@@ -15,8 +15,8 @@ Although independently maintained and usable, this repository is also part of th
 - Public headers: `include/set/`, with umbrella header `include/ariadne-set.hpp`.
 - C++ implementations: `src/`.
 - C++ tests: `tests/`.
-- Python binding, tests and tutorial: `python/bindings/`, `python/tests/` and `python/tutorials/`.
-- Standalone installed C++ example: `tutorials/tutorial_set/`.
+- Python binding, tests and tutorial: `python/bindings/`, `python/tests/` and `tutorial/`.
+- Standalone installed C++ example: `tutorial/`.
 
 ## Dependencies
 
@@ -52,8 +52,8 @@ With Python 3.11 or newer and a matching development environment, the build cont
 
 ## Tutorials
 
-- C++: `tutorials/tutorial_set/tutorial_set.cpp`, built separately against an installed `ariadne-set`.
-- Python: `python/tutorials/tutorial_set.py`.
+- C++: `tutorial/tutorial_set.cpp`, built separately against an installed `ariadne-set`.
+- Python: `python/tutorial.py`.
 
 ## Contribution guidelines
 
