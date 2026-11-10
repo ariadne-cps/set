@@ -1,5 +1,5 @@
 /***************************************************************************
- *            polytope.hpp
+ *            set/polytope.hpp
  *
  *  Copyright  2005-20  Alberto Casagrande, Pieter Collins
  *

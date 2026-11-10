@@ -1,5 +1,5 @@
 /***************************************************************************
- *            affine_set.hpp
+ *            set/affine_set.hpp
  *
  *  Copyright  2009-20  Pieter Collins
  *

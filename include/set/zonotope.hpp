@@ -1,5 +1,5 @@
 /***************************************************************************
- *            zonotope.hpp
+ *            set/zonotope.hpp
  *
  *  Copyright  2008-20  Alberto Casagrande, Pieter Collins
  *

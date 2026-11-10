@@ -1,5 +1,5 @@
 /***************************************************************************
- *            multifunction_image.hpp
+ *            set/multifunction_image.hpp
  *
  *  Copyright  2026  Luca Geretti
  *

@@ -1,5 +1,5 @@
 /***************************************************************************
- *            polyhedron.hpp
+ *            set/polyhedron.hpp
  *
  *  Copyright  2005-20  Alberto Casagrande, Pieter Collins
  *

@@ -1,5 +1,5 @@
 /***************************************************************************
- *            list_set.hpp
+ *            set/list_set.hpp
  *
  *  Copyright  2008-20  Alberto Casagrande, Pieter Collins
  *
