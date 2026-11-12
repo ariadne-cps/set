@@ -51,11 +51,7 @@ cmake --install build-release --prefix /path/to/install
 
 With Python 3.11 or newer and a matching development environment, the build contributes the Set bindings to the `pyariadne` extension via the lower Constraint Solving, Nonlinear Programming, Function and Geometry modules. The extension installs under the chosen prefix.
 
-## Tutorials
-
-- C++: `tutorial/tutorial_set.cpp`, built separately against an installed `ariadne-set`.
-- Python: `python/tutorial.py`.
-
 ## Contribution guidelines
 
 Please contact the developer: Luca Geretti <luca.geretti@univr.it>.
+
