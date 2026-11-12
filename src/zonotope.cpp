@@ -26,6 +26,8 @@
  *  @brief Implement zonotope geometry and validated approximations.
  */
 
+#include "set/zonotope.hpp"
+
 #include <algorithm>
 #include <iostream>
 #include <vector>
@@ -34,7 +36,6 @@
 #include "algebra/vector.hpp"
 #include "function/function.hpp"
 #include "function/functional.hpp"
-#include "set/zonotope.hpp"
 #include "geometry/box.hpp"
 #include "geometry/point.hpp"
 #include "set/list_set.hpp"

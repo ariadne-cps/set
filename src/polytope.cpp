@@ -32,11 +32,11 @@
 #include "algebra/vector.hpp"
 #include "function/function.hpp"
 #include "function/functional.hpp"
-#include "utility/stlio.hpp"
 #include "geometry/box.hpp"
 #include "geometry/point.hpp"
 #include "set/curve.hpp"
 #include "set/zonotope.hpp"
+#include "utility/stlio.hpp"
 
 namespace Ariadne {
 
