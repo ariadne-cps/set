@@ -103,6 +103,7 @@ class ValidatedAffineConstrainedImageSet
     ValidatedAffineConstrainedImageSet(const ExactBoxType& D, const Vector<Affine<FloatDPBounds>>& f, const List<AffineConstraint<FloatDPBounds>>& c);
     //!\brief The set \f$\{ x_i=f_i(s) \mid s\in [-1,+1]^n \mid c(s) \}\f$.
     explicit ValidatedAffineConstrainedImageSet(const Vector<ValidatedAffineModelDP>& f, const List<ValidatedAffineModelConstraintDP>& c);
+    /** @brief Construct an affine image set without additional constraints. */
     explicit ValidatedAffineConstrainedImageSet(const Vector<ValidatedAffineModelDP>& f);
 
     ValidatedAffineConstrainedImageSet(const ExactBoxType& D, const Vector<ValidatedAffineModelDP>& f, const List<ValidatedAffineModelConstraintDP>& c);

@@ -41,6 +41,7 @@ namespace Ariadne {
 
 template<class ES> class ListSet;
 
+/** @brief Summarize the number of constituent sets and their common dimension. */
 struct ListSetSummary { SizeType size; DimensionType dimension; };
 
 /*! \ingroup ListSetSubModule
@@ -57,18 +58,26 @@ class ListSet
     typedef typename std::vector<BS>::iterator Iterator;
     typedef BS value_type;
 
+    /** @brief Destroy a list set and its owned elements. */
     virtual ~ListSet() = default;
 
+    /** @brief Construct an empty list set. */
     ListSet() { };
+    /** @brief Construct an empty list set with a dimension hint. */
     explicit ListSet(DimensionType) { };
+    /** @brief Construct a list set containing one basic set. */
     explicit ListSet(const BS& bs) { this->adjoin(bs); }
+    /** @brief Construct a list set from another list set's elements. */
     template<class BST> ListSet(const ListSet<BST>& ls) {
         this->_data.insert(this->end(),ls.begin(),ls.end()); }
+    /** @brief Construct a list set from a standard vector. */
     ListSet(const std::vector<BS>& lst) {
         this->_data.insert(this->end(),lst.begin(),lst.end()); }
+    /** @brief Construct a list set from an iterator range. */
     template<class Iter> ListSet(Iter first, Iter last) {
         this->_data.insert(this->end(),first,last); }
 
+    /** @brief Allocate a copy of this list set. */
     ListSet<BS>* clone() const { return new ListSet<BS>(*this); }
 
     /*! \brief Tests if the sets are equal. Tests equality of sequences,
