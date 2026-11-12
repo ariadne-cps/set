@@ -31,26 +31,25 @@
 
 #include <iosfwd>
 
-#include "geometry/declarations.hpp"
-#include "foundation/logical.hpp"
-
-#include "algebra/vector.hpp"
 #include "algebra/matrix.hpp"
-
+#include "algebra/vector.hpp"
+#include "foundation/logical.hpp"
+#include "geometry/declarations.hpp"
 #include "geometry/set_interface.hpp"
-
 
 namespace Ariadne {
 
-template<class X> class Vector;
-template<class X> class Matrix;
+template<class X>
+class Vector;
+template<class X>
+class Matrix;
 
 class Zonotope;
-template<class BS> class ListSet;
+template<class BS>
+class ListSet;
 
-template<class X> class Affine;
-
-
+template<class X>
+class Affine;
 
 /*!\brief A zonotope of arbitrary dimension.
  *
@@ -74,7 +73,6 @@ template<class X> class Affine;
  * (kd+i)th element.
  */
 
-
 class Zonotope
     : public CompactSetInterface
 
@@ -83,6 +81,7 @@ class Zonotope
     Vector<FloatDP> _centre;
     Matrix<FloatDP> _generators;
     Vector<FloatDP> _error;
+
   public:
     //!@{
     //! \name Constructors and destructors
@@ -106,15 +105,14 @@ class Zonotope
     /*! \brief Construct from an interval centre and an interval generator matrix. */
     explicit Zonotope(const Vector<ExactIntervalType>& c, const Matrix<ExactIntervalType>& G);
 
-
     /*! \brief Construct a zonotope of dimension \a d with centre at the origin and \a m generators from the data beginning at \a ptr. */
-    template<class XX> explicit Zonotope(DimensionType d, SizeType m, const XX* ptr);
+    template<class XX>
+    explicit Zonotope(DimensionType d, SizeType m, const XX* ptr);
 
     /*! \brief Construct a zonotope of dimension \a d with \a m generators from raw data.
      *  The data format is (c0,G00,G01,...,G0m,e0,c1,G10,...,G1m,e1,...).
      */
-    explicit Zonotope(InitializerList< std::tuple<FloatDP,InitializerList<FloatDP>,FloatDP> > lst);
-
+    explicit Zonotope(InitializerList<std::tuple<FloatDP, InitializerList<FloatDP>, FloatDP>> lst);
 
     /*! \brief Convert from a box. */
     Zonotope(const ExactBoxType& r);
@@ -125,7 +123,6 @@ class Zonotope
     /*! \brief Cloning operator. */
     Zonotope* clone() const;
     //!@}
-
 
     //!@{
     //! \name Logical predicates
@@ -168,7 +165,6 @@ class Zonotope
     ValidatedKleenean inside(const ExactBoxType& bx) const;
 
     //!@}
-
 
     //!@{
     //! \name Geometric binary predicates
@@ -213,12 +209,10 @@ class Zonotope
     //!@}
 };
 
-
 ValidatedKleenean empty(const Zonotope& z);
 ValidatedKleenean is_bounded(const Zonotope& z);
 FloatDP radius(const Zonotope& z);
 ExactBoxType bounding_box(const Zonotope& z);
-
 
 ValidatedKleenean contains(const Zonotope& z, const ExactPoint& pt);
 ValidatedKleenean separated(const Zonotope& z, const ExactBoxType& r);
@@ -243,13 +237,10 @@ Zonotope apply(const VectorMultivariateFunction<ValidatedTag>& f, const Zonotope
 OutputStream& operator<<(OutputStream& os, const Zonotope& z);
 InputStream& operator>>(InputStream& is, Zonotope& z);
 
-
-template<class X> inline
-Zonotope::Zonotope(DimensionType d, SizeType m, const X* ptr)
-    : _centre(d,ptr), _generators(d,m,ptr+d), _error(d)
-{
+template<class X>
+inline Zonotope::Zonotope(DimensionType d, SizeType m, const X* ptr)
+    : _centre(d, ptr), _generators(d, m, ptr + d), _error(d) {
 }
-
 
 } // namespace Ariadne
 

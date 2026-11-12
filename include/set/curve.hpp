@@ -31,31 +31,31 @@
 
 #include <memory>
 
-#include "utility/macros.hpp"
-#include "utility/stlio.hpp"
 #include "function/function.hpp"
 #include "geometry/box.decl.hpp"
+#include "utility/macros.hpp"
+#include "utility/stlio.hpp"
 
 namespace Ariadne {
 
+template<class X>
+class Vector;
 
-template<class X> class Vector;
-
-template<class X> class Point;
-
+template<class X>
+class Point;
 
 // Forward declarations for friends
 class CurveInterface;
 
 /*! \brief A curve in Euclidean space
  */
-class CurveInterface
-{
+class CurveInterface {
   public:
     typedef Dyadic GenericParameterType;
     typedef FloatDP ParameterType;
     typedef Point<FloatDPApproximation> PointType;
     typedef Vector<FloatDPApproximation> TangentVectorType;
+
   public:
     /*! \brief Destructor. */
     virtual ~CurveInterface() = default;
@@ -76,20 +76,19 @@ class CurveInterface
 };
 
 inline OutputStream& operator<<(OutputStream& os, const CurveInterface& c) {
-    return c._write(os); }
-
-
+    return c._write(os);
+}
 
 /*! \brief A curve in Euclidean space
  */
 class Curve
-    : public CurveInterface
-{
+    : public CurveInterface {
   public:
     typedef CurveInterface::GenericParameterType GenericParameterType;
     typedef CurveInterface::ParameterType ParameterType;
     typedef CurveInterface::PointType PointType;
     typedef CurveInterface::TangentVectorType TangentVectorType;
+
   public:
     /*! \brief Destructor. */
     virtual ~Curve() = default;
@@ -111,15 +110,13 @@ class Curve
 
     /*! \brief Write to an output stream. */
     virtual OutputStream& _write(OutputStream& os) const;
+
   private:
     EffectiveVectorUnivariateFunction _function;
 };
 
-
-
 /*! \brief A linearly interpolated curve in Euclidean space. */
-class InterpolatedCurve
-{
+class InterpolatedCurve {
   public:
     virtual ~InterpolatedCurve() = default;
 
@@ -128,24 +125,32 @@ class InterpolatedCurve
     typedef CurveInterface::ParameterType ParameterType;
     typedef CurveInterface::PointType PointType;
     typedef CurveInterface::TangentVectorType TangentVectorType;
+
   public:
-    typedef std::map< ParameterType, PointType >::const_iterator ConstIterator;
+    typedef std::map<ParameterType, PointType>::const_iterator ConstIterator;
+
   public:
     /*! \brief Create an empty curve. */
-    InterpolatedCurve() : _points() { }
+    InterpolatedCurve() : _points() {}
     /*! \brief Create a curve with a single point \a pt at parameter value 0. */
     explicit InterpolatedCurve(const PointType& pt)
-        : _points() { this->insert(0,pt); }
+        : _points() { this->insert(0, pt); }
     /*! \brief Create a curve with a single point \a pt at parameter value \a s. */
     explicit InterpolatedCurve(ParameterType s, const PointType& pt)
-        : _points() { this->insert(s,pt); }
+        : _points() { this->insert(s, pt); }
     explicit InterpolatedCurve(GenericParameterType s, const PointType& pt)
-        : _points() { PrecisionType pr; this->insert(ParameterType(s,pr),pt); }
+        : _points() {
+        PrecisionType pr;
+        this->insert(ParameterType(s, pr), pt);
+    }
     explicit InterpolatedCurve(const RawFloatDP& s, const Vector<RawFloatDP>& pt)
-        : _points() { this->insert(s,pt); }
+        : _points() { this->insert(s, pt); }
     /*! \brief Create a segment from \a pt0 at parameter value 0 to \a pt1 at parameter value 1. */
     explicit InterpolatedCurve(const PointType& pt0, const PointType& pt1)
-        : _points() { this->insert(0,pt0); this->insert(1,pt1); }
+        : _points() {
+        this->insert(0, pt0);
+        this->insert(1, pt1);
+    }
     /*! \brief Insert a point with parameter value \a s and spacial value \a pt. */
     Void insert(const GenericParameterType& s, const PointType& pt);
     Void insert(const ParameterType& s, const PointType& pt);
@@ -171,15 +176,14 @@ class InterpolatedCurve
 
   private:
     friend OutputStream& operator<<(OutputStream&, const InterpolatedCurve&);
+
   private:
-    std::map< ParameterType, PointType > _points;
+    std::map<ParameterType, PointType> _points;
 };
 
-inline
-OutputStream& operator<<(OutputStream& os, const InterpolatedCurve& curve) {
+inline OutputStream& operator<<(OutputStream& os, const InterpolatedCurve& curve) {
     return os << "InterpolatedCurve( size=" << curve.size() << ", points=" << curve._points << " )";
 }
-
 
 } // namespace Ariadne
 

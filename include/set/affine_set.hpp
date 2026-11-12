@@ -29,26 +29,28 @@
 #ifndef ARIADNE_AFFINE_SET_HPP
 #define ARIADNE_AFFINE_SET_HPP
 
+#include <iostream>
+#include <list>
 #include <string>
 #include <vector>
-#include <list>
-#include <iostream>
 
-#include "geometry/declarations.hpp"
-#include "logging/logging.hpp"
-#include "utility/container.hpp"
 #include "function/affine.hpp"
 #include "function/affine_model.hpp"
 #include "function/constraint.hpp"
-
+#include "geometry/declarations.hpp"
+#include "logging/logging.hpp"
+#include "utility/container.hpp"
 
 namespace Ariadne {
 
-
-template<class X, class B=X> using AffineConstraint = Constraint<Affine<X>,B>;
-template<class F> using ValidatedAffineConstraint = Constraint<Affine<Bounds<F>>,Bounds<F>>;
-template<class F> using ValidatedAffineModel = AffineModel<ValidatedTag,F>;
-template<class F> using ValidatedAffineModelConstraint = Constraint<ValidatedAffineModel<F>,Bounds<F>>;
+template<class X, class B = X>
+using AffineConstraint = Constraint<Affine<X>, B>;
+template<class F>
+using ValidatedAffineConstraint = Constraint<Affine<Bounds<F>>, Bounds<F>>;
+template<class F>
+using ValidatedAffineModel = AffineModel<ValidatedTag, F>;
+template<class F>
+using ValidatedAffineModelConstraint = Constraint<ValidatedAffineModel<F>, Bounds<F>>;
 
 using EffectiveAffineConstraint = AffineConstraint<EffectiveNumber>;
 using RealAffineConstraint = AffineConstraint<Real>;
@@ -57,27 +59,43 @@ using ValidatedAffineModelDP = ValidatedAffineModel<FloatDP>;
 using ValidatedAffineConstraintDP = ValidatedAffineConstraint<FloatDP>;
 using ValidatedAffineModelConstraintDP = ValidatedAffineModelConstraint<FloatDP>;
 
+template<class X>
+AffineConstraint<X> operator<=(const SelfType<X>& l, const Affine<X>& a) {
+    X u(+infty, l.precision());
+    return AffineConstraint<X>(l, a, u);
+}
+template<class X>
+AffineConstraint<X> operator<=(const Affine<X>& a, const SelfType<X>& u) {
+    X l(-infty, u.precision());
+    return AffineConstraint<X>(l, a, u);
+}
+template<class X>
+AffineConstraint<X> operator<=(const AffineConstraint<X>& ac, const SelfType<X>& u) {
+    ARIADNE_ASSERT(decide(ac.upper_bound() == infty));
+    return AffineConstraint<X>(ac.lower_bound(), ac.function(), u);
+}
+template<class X>
+AffineConstraint<X> operator==(const Affine<X>& a, const SelfType<X>& c) {
+    return AffineConstraint<X>(c, a, c);
+}
 
-template<class X> AffineConstraint<X> operator<=(const SelfType<X>& l, const Affine<X>& a) {
-    X u(+infty,l.precision()); return AffineConstraint<X>(l,a,u); }
-template<class X> AffineConstraint<X> operator<=(const Affine<X>& a, const SelfType<X>& u) {
-    X l(-infty,u.precision());return AffineConstraint<X>(l,a,u); }
-template<class X> AffineConstraint<X> operator<=(const AffineConstraint<X>& ac, const SelfType<X>& u) {
-    ARIADNE_ASSERT(decide(ac.upper_bound()==infty));
-    return AffineConstraint<X>(ac.lower_bound(),ac.function(),u); }
-template<class X> AffineConstraint<X> operator==(const Affine<X>& a, const SelfType<X>& c) {
-    return AffineConstraint<X>(c,a,c); }
-
-template<class F> ValidatedAffineModelConstraint<F> operator<=(const Bounds<F>& l, const ValidatedAffineModel<F>& am) {
-    return ValidatedAffineModelConstraint<F>(l,am,+infty); }
-template<class F> ValidatedAffineModelConstraint<F> operator<=(const ValidatedAffineModel<F>& am, const Bounds<F>& u) {
-    return ValidatedAffineModelConstraint<F>(-infty,am,u); }
-template<class F> ValidatedAffineModelConstraint<F> operator<=(const ValidatedAffineModelConstraint<F>& amc, const Bounds<F>& u) {
-    ARIADNE_ASSERT(decide(amc.upper_bound()==infty));
-    return ValidatedAffineModelConstraint<F>(amc.lower_bound(),amc.function(),u); }
-template<class F> ValidatedAffineModelConstraint<F> operator==(const ValidatedAffineModel<F>& am, const Bounds<F>& c) {
-    return ValidatedAffineModelConstraint<F>(c,am,c); }
-
+template<class F>
+ValidatedAffineModelConstraint<F> operator<=(const Bounds<F>& l, const ValidatedAffineModel<F>& am) {
+    return ValidatedAffineModelConstraint<F>(l, am, +infty);
+}
+template<class F>
+ValidatedAffineModelConstraint<F> operator<=(const ValidatedAffineModel<F>& am, const Bounds<F>& u) {
+    return ValidatedAffineModelConstraint<F>(-infty, am, u);
+}
+template<class F>
+ValidatedAffineModelConstraint<F> operator<=(const ValidatedAffineModelConstraint<F>& amc, const Bounds<F>& u) {
+    ARIADNE_ASSERT(decide(amc.upper_bound() == infty));
+    return ValidatedAffineModelConstraint<F>(amc.lower_bound(), amc.function(), u);
+}
+template<class F>
+ValidatedAffineModelConstraint<F> operator==(const ValidatedAffineModel<F>& am, const Bounds<F>& c) {
+    return ValidatedAffineModelConstraint<F>(c, am, c);
+}
 
 //! \brief A constrained image set defined by affine functions.
 //!  Defines a set of the form \f$S=\{ f(x) \mid x\in D \mid g(x)\leq 0 \wedge h(x)=0 \}\f$
@@ -89,9 +107,10 @@ class ValidatedAffineConstrainedImageSet
     : public virtual ValidatedEuclideanCompactSetInterface
 
 {
-    ExactBoxType  _domain;
+    ExactBoxType _domain;
     Vector<ValidatedAffineModelDP> _space_models;
     List<ValidatedAffineModelConstraintDP> _constraint_models;
+
   public:
     //!\brief The set \f$\{ y \mid y\in D\}\f$.
     ValidatedAffineConstrainedImageSet(const ExactBoxType& D);
@@ -130,15 +149,14 @@ class ValidatedAffineConstrainedImageSet
     ValidatedLowerKleenean is_empty() const;
 
     //! \brief Compute the image of \f$S\f$ under the function \f$h\f$.
-    friend ValidatedAffineConstrainedImageSet image(ValidatedAffineConstrainedImageSet set, ValidatedVectorMultivariateFunction const& h);
-
+    friend ValidatedAffineConstrainedImageSet image(ValidatedAffineConstrainedImageSet set, const ValidatedVectorMultivariateFunction& h);
 
     const Vector<ValidatedAffineModelDP>& space_models() const { return _space_models; }
     const List<ValidatedAffineModelConstraintDP>& constraint_models() const { return _constraint_models; }
     //! Build the affine feasibility constraints A*x=b with l<=x<=u.
     Void construct_linear_constraints(Matrix<FloatDP>& A, Vector<FloatDP>& b, Vector<FloatDP>& l, Vector<FloatDP>& u) const;
 
-    List<Pair<double,double>> boundary(SizeType xc, SizeType yc) const;
+    List<Pair<double, double>> boundary(SizeType xc, SizeType yc) const;
     virtual OutputStream& _write(OutputStream& os) const override;
 
   private:
@@ -146,9 +164,8 @@ class ValidatedAffineConstrainedImageSet
 };
 
 inline OutputStream& operator<<(OutputStream& os, const ValidatedAffineConstrainedImageSet& as) {
-    return as._write(os); }
-
-
+    return as._write(os);
+}
 
 } // namespace Ariadne
 

@@ -26,10 +26,11 @@
  *  @brief Test affine constrained image sets and validated geometry.
  */
 
-#include <iostream>
-#include <cmath>
 #include <algorithm>
+#include <cmath>
+#include <iostream>
 #include <memory>
+
 #include "function/function.hpp"
 #include "geometry/box.hpp"
 #include "set/affine_set.hpp"
@@ -42,122 +43,164 @@ using namespace std;
 
 namespace Ariadne {
 
-template<class X> AffineConstraint<X> operator<=(const Dyadic& l, const Affine<X>& a) {
-    return AffineConstraint<X>({l,a.value().precision()},a,{+infty,a.value().precision()}); }
-template<class X> AffineConstraint<X> operator<=(const Affine<X>& a, const Dyadic& u) {
-    return AffineConstraint<X>(-infty,a,u); }
-template<class X> AffineConstraint<X> operator<=(const AffineConstraint<X>& ac, const Dyadic& u) {
-    ARIADNE_ASSERT(decide(ac.upper_bound()==infty));
-    return AffineConstraint<X>(ac.lower_bound(),ac.function(),{u,ac.lower_bound().precision()}); }
-template<class X> AffineConstraint<X> operator==(const Affine<X>& a, const Dyadic& u) {
-    return AffineConstraint<X>(u,a,u); }
+template<class X>
+AffineConstraint<X> operator<=(const Dyadic& l, const Affine<X>& a) {
+    return AffineConstraint<X>({l, a.value().precision()}, a, {+infty, a.value().precision()});
 }
+template<class X>
+AffineConstraint<X> operator<=(const Affine<X>& a, const Dyadic& u) {
+    return AffineConstraint<X>(-infty, a, u);
+}
+template<class X>
+AffineConstraint<X> operator<=(const AffineConstraint<X>& ac, const Dyadic& u) {
+    ARIADNE_ASSERT(decide(ac.upper_bound() == infty));
+    return AffineConstraint<X>(ac.lower_bound(), ac.function(), {u, ac.lower_bound().precision()});
+}
+template<class X>
+AffineConstraint<X> operator==(const Affine<X>& a, const Dyadic& u) {
+    return AffineConstraint<X>(u, a, u);
+}
+} // namespace Ariadne
 
-
-class TestAffineSet : public Ariadne::Testing::ContextFixture
-{
+class TestAffineSet : public Ariadne::Testing::ContextFixture {
   private:
     ExactBoxType D;
-    Vector< Affine<FloatDPBounds> > x;
+    Vector<Affine<FloatDPBounds>> x;
     ValidatedAffineConstrainedImageSet set;
+
   public:
-    explicit TestAffineSet(Ariadne::Testing::Context& context) :
-        ContextFixture(context),
-        set(ExactBoxType::unit_box(2),Matrix<FloatDP>(2,2,dp),Vector<FloatDP>(2,dp)) { }
+    explicit TestAffineSet(Ariadne::Testing::Context& context) : ContextFixture(context),
+                                                                 set(ExactBoxType::unit_box(2), Matrix<FloatDP>(2, 2, dp), Vector<FloatDP>(2, dp)) {}
 
     Void test_basic_coverage() {
-        RealBox real_box(2,RealInterval(-1,1));
+        RealBox real_box(2, RealInterval(-1, 1));
         ValidatedAffineConstrainedImageSet from_real(real_box);
-        ARIADNE_TESTING_EXPECT_EQUAL(from_real.dimension(),2u);
+        ARIADNE_TESTING_EXPECT_EQUAL(from_real.dimension(), 2u);
         ARIADNE_TESTING_PROVE(definitely(from_real.is_bounded()));
-        ARIADNE_TESTING_EXPECT_EQUAL(from_real.number_of_constraints(),0u);
+        ARIADNE_TESTING_EXPECT_EQUAL(from_real.number_of_constraints(), 0u);
 
-        ExactBoxType exact_box({{-1.0_x,+1.0_x},{-2.0_x,+2.0_x}});
+        ExactBoxType exact_box({
+            {-1.0_x, +1.0_x},
+            {-2.0_x, +2.0_x}
+        });
         ValidatedAffineConstrainedImageSet from_exact(exact_box);
-        ARIADNE_TESTING_EXPECT_EQUAL(from_exact.domain(),exact_box);
-        ARIADNE_TESTING_PROVE(definitely(from_exact.inside(ExactBoxType{{-2.0_x,+2.0_x},{-3.0_x,+3.0_x}})));
+        ARIADNE_TESTING_EXPECT_EQUAL(from_exact.domain(), exact_box);
+        ARIADNE_TESTING_PROVE(definitely(from_exact.inside(ExactBoxType{
+            {-2.0_x, +2.0_x},
+            {-3.0_x, +3.0_x}
+        })));
 
-        Vector<ValidatedAffineModelDP> models=ValidatedAffineModelDP::scalings(ExactBoxType::unit_box(2),dp);
+        Vector<ValidatedAffineModelDP> models = ValidatedAffineModelDP::scalings(ExactBoxType::unit_box(2), dp);
         ValidatedAffineConstrainedImageSet from_models(models);
         List<ValidatedAffineModelConstraintDP> constraints;
-        ValidatedAffineConstrainedImageSet from_models_and_constraints(models,constraints);
-        ARIADNE_TESTING_EXPECT_EQUAL(from_models.number_of_parameters(),2u);
-        ARIADNE_TESTING_EXPECT_EQUAL(from_models_and_constraints.number_of_constraints(),0u);
+        ValidatedAffineConstrainedImageSet from_models_and_constraints(models, constraints);
+        ARIADNE_TESTING_EXPECT_EQUAL(from_models.number_of_parameters(), 2u);
+        ARIADNE_TESTING_EXPECT_EQUAL(from_models_and_constraints.number_of_constraints(), 0u);
         // The representation exposed to downstream algorithms retains its models.
-        ARIADNE_TESTING_EXPECT_EQUAL(from_models.space_models().size(),2u);
-        ARIADNE_TESTING_EXPECT_EQUAL(from_models_and_constraints.constraint_models().size(),0u);
+        ARIADNE_TESTING_EXPECT_EQUAL(from_models.space_models().size(), 2u);
+        ARIADNE_TESTING_EXPECT_EQUAL(from_models_and_constraints.constraint_models().size(), 0u);
         std::unique_ptr<ValidatedAffineConstrainedImageSet> cloned(from_models.clone());
-        ARIADNE_TESTING_EXPECT_EQUAL(cloned->dimension(),from_models.dimension());
-        ARIADNE_TESTING_EXPECT_EQUAL(cloned->number_of_parameters(),from_models.number_of_parameters());
+        ARIADNE_TESTING_EXPECT_EQUAL(cloned->dimension(), from_models.dimension());
+        ARIADNE_TESTING_EXPECT_EQUAL(cloned->number_of_parameters(), from_models.number_of_parameters());
 
-        auto y=ValidatedScalarMultivariateFunction::coordinates(2);
-        ValidatedVectorMultivariateFunction h({y[0]+y[1],y[0]-y[1]});
-        auto transformed=image(from_exact,h);
-        ARIADNE_TESTING_EXPECT_EQUAL(transformed.dimension(),2u);
+        auto y = ValidatedScalarMultivariateFunction::coordinates(2);
+        ValidatedVectorMultivariateFunction h({y[0] + y[1], y[0] - y[1]});
+        auto transformed = image(from_exact, h);
+        ARIADNE_TESTING_EXPECT_EQUAL(transformed.dimension(), 2u);
     }
 
     Void test_pure_constraint() {
-
         D = ExactBoxType::unit_box(2);
-        x = Affine<FloatDPBounds>::variables(2,dp);
+        x = Affine<FloatDPBounds>::variables(2, dp);
 
-        set=ValidatedAffineConstrainedImageSet(D, {x[0]+2,x[0]+x[1]} );
+        set = ValidatedAffineConstrainedImageSet(D, {x[0] + 2, x[0] + x[1]});
 
-        set.new_parameter_constraint(x[0]+0.5_x*x[1]+0.75_x <= 0.0_x);
-        set.new_parameter_constraint(-0.5_x*x[0]+1.5_x*x[1]+0.5_x <= 0.0_x);
+        set.new_parameter_constraint(x[0] + 0.5_x * x[1] + 0.75_x <= 0.0_x);
+        set.new_parameter_constraint(-0.5_x * x[0] + 1.5_x * x[1] + 0.5_x <= 0.0_x);
 
         ARIADNE_TESTING_NOTE("set = " << (set));
 
-        set=ValidatedAffineConstrainedImageSet(D, {x[0]+x[1]+2,x[0]+x[1]+2});
-        set.new_parameter_constraint(-0.5_x*x[0]-1.5_x*x[1]+0.5_x <= 0.0_x);
+        set = ValidatedAffineConstrainedImageSet(D, {x[0] + x[1] + 2, x[0] + x[1] + 2});
+        set.new_parameter_constraint(-0.5_x * x[0] - 1.5_x * x[1] + 0.5_x <= 0.0_x);
 
         ARIADNE_TESTING_NOTE("set = " << (set));
     }
 
     Void test_nonunit_domain() {
-        D=ExactBoxType({{0.0_x,2.0_x},{-3.0_x,1.0_x}});
-        x=Affine<FloatDPBounds>::variables(2,dp);
+        D = ExactBoxType({
+            { 0.0_x, 2.0_x},
+            {-3.0_x, 1.0_x}
+        });
+        x = Affine<FloatDPBounds>::variables(2, dp);
 
-        set=ValidatedAffineConstrainedImageSet(D,{x[0],x[1]},{x[0]+x[1]<=1.0_x});
-        ARIADNE_TESTING_EXPECT_EQUAL(set.domain(),D);
-        ARIADNE_TESTING_EXPECT_EQUAL(set.number_of_constraints(),1u);
-        ARIADNE_TESTING_EXPECT_SAME(set.bounding_box(),UpperBoxType({{0.0_x,2.0_x},{-3.0_x,1.0_x}}));
+        set = ValidatedAffineConstrainedImageSet(D, {x[0], x[1]}, {x[0] + x[1] <= 1.0_x});
+        ARIADNE_TESTING_EXPECT_EQUAL(set.domain(), D);
+        ARIADNE_TESTING_EXPECT_EQUAL(set.number_of_constraints(), 1u);
+        ARIADNE_TESTING_EXPECT_SAME(set.bounding_box(), UpperBoxType({
+                                                            { 0.0_x, 2.0_x},
+                                                            {-3.0_x, 1.0_x}
+        }));
 
-        ValidatedAffineConstrainedImageSet unconstrained(D,{x[0],x[1]});
-        ARIADNE_TESTING_EXPECT_SAME(unconstrained.bounding_box(),UpperBoxType({{0.0_x,2.0_x},{-3.0_x,1.0_x}}));
+        ValidatedAffineConstrainedImageSet unconstrained(D, {x[0], x[1]});
+        ARIADNE_TESTING_EXPECT_SAME(unconstrained.bounding_box(), UpperBoxType({
+                                                                      { 0.0_x, 2.0_x},
+                                                                      {-3.0_x, 1.0_x}
+        }));
     }
 
     Void test_constrained_image() {
         D = ExactBoxType::unit_box(3);
-        x = Affine<FloatDPBounds>::variables(3,dp);
+        x = Affine<FloatDPBounds>::variables(3, dp);
 
-        set=ValidatedAffineConstrainedImageSet(D, {2*x[0]+3*x[1]+x[2],x[0]+x[1]-2} );
+        set = ValidatedAffineConstrainedImageSet(D, {2 * x[0] + 3 * x[1] + x[2], x[0] + x[1] - 2});
 
-        set.new_parameter_constraint(1.0_x*x[0]+0.5_x*x[1]+0.25_x*x[2]<=0.75_x);
-        set.new_parameter_constraint(-2.0_x*x[0]-3.0_x*x[1]-1.0_x*x[2]<=3.00_x);
+        set.new_parameter_constraint(1.0_x * x[0] + 0.5_x * x[1] + 0.25_x * x[2] <= 0.75_x);
+        set.new_parameter_constraint(-2.0_x * x[0] - 3.0_x * x[1] - 1.0_x * x[2] <= 3.00_x);
 
         ARIADNE_TESTING_NOTE("set = " << (set));
-
     }
 
-
     Void test_separated() {
-        D=ExactBoxType::unit_box(3);
-        x=Affine<FloatDPBounds>::variables(3,dp);
-        set=ValidatedAffineConstrainedImageSet(D, {-0.9375_x+0.0625_x*x[0]+0.5_x*x[1],0.87890625_x-0.1171875_x*x[0]+x[1]+0.00390625_x*x[2]});
-        set.new_parameter_constraint(-1.1875_x+0.0625_x*x[0]+x[1]<=0.0_x);
+        D = ExactBoxType::unit_box(3);
+        x = Affine<FloatDPBounds>::variables(3, dp);
+        set = ValidatedAffineConstrainedImageSet(D, {-0.9375_x + 0.0625_x * x[0] + 0.5_x * x[1], 0.87890625_x - 0.1171875_x * x[0] + x[1] + 0.00390625_x * x[2]});
+        set.new_parameter_constraint(-1.1875_x + 0.0625_x * x[0] + x[1] <= 0.0_x);
         ARIADNE_TESTING_NOTE("set = " << (set));
-        ExactBoxType cell1({{-1.0_x,-0.9375_x},{0.8125_x, 0.875_x}}); ARIADNE_TESTING_NOTE("Constructed ExactBoxType cell1 = " << cell1); // subset
-        ExactBoxType cell2({{-0.5625_x,-0.50_x},{1.4375_x,1.5_x}}); ARIADNE_TESTING_NOTE("Constructed ExactBoxType cell2 = " << cell2); // overlaps
-        ExactBoxType cell3({{-0.875_x,-0.75_x},{0.625_x,0.7578125_x}}); ARIADNE_TESTING_NOTE("Constructed ExactBoxType cell3 = " << cell3); // touches at (-0.875_x,0.7578125_x);
-        ExactBoxType cell4({{-1.1875_x,-1.125_x},{0.0625_x,0.125_x}}); ARIADNE_TESTING_NOTE("Constructed ExactBoxType cell4 = " << cell4); // almost touches
-        ExactBoxType cell5({{-0.9375_x,-0.875_x},{0.4375_x,0.5_x}}); ARIADNE_TESTING_NOTE("Constructed ExactBoxType cell5 = " << cell5); // disjoint
-        ExactBoxType cell6({{-1.5_x,-1.375_x},{0.5_x,0.625_x}}); ARIADNE_TESTING_NOTE("Constructed ExactBoxType cell6 = " << cell6); // disjoint; regression test
+        ExactBoxType cell1({
+            {  -1.0_x, -0.9375_x},
+            {0.8125_x,   0.875_x}
+        });
+        ARIADNE_TESTING_NOTE("Constructed ExactBoxType cell1 = " << cell1); // subset
+        ExactBoxType cell2({
+            {-0.5625_x, -0.50_x},
+            { 1.4375_x,   1.5_x}
+        });
+        ARIADNE_TESTING_NOTE("Constructed ExactBoxType cell2 = " << cell2); // overlaps
+        ExactBoxType cell3({
+            {-0.875_x,     -0.75_x},
+            { 0.625_x, 0.7578125_x}
+        });
+        ARIADNE_TESTING_NOTE("Constructed ExactBoxType cell3 = " << cell3); // touches at (-0.875_x,0.7578125_x);
+        ExactBoxType cell4({
+            {-1.1875_x, -1.125_x},
+            { 0.0625_x,  0.125_x}
+        });
+        ARIADNE_TESTING_NOTE("Constructed ExactBoxType cell4 = " << cell4); // almost touches
+        ExactBoxType cell5({
+            {-0.9375_x, -0.875_x},
+            { 0.4375_x,    0.5_x}
+        });
+        ARIADNE_TESTING_NOTE("Constructed ExactBoxType cell5 = " << cell5); // disjoint
+        ExactBoxType cell6({
+            {-1.5_x, -1.375_x},
+            { 0.5_x,  0.625_x}
+        });
+        ARIADNE_TESTING_NOTE("Constructed ExactBoxType cell6 = " << cell6); // disjoint; regression test
 
         ARIADNE_TESTING_PROVE(!definitely(set.separated(cell1)));
         ARIADNE_TESTING_PROVE(!definitely(set.separated(cell2)));
         ARIADNE_TESTING_PROVE(!definitely(set.separated(cell3)));
-        //ARIADNE_TESTING_PROVE(!definitely(affine_set.overlaps(cell3)));
+        // ARIADNE_TESTING_PROVE(!definitely(affine_set.overlaps(cell3)));
         ARIADNE_TESTING_PROVE(possibly(set.separated(cell4)));
         ARIADNE_TESTING_PROVE(definitely(set.separated(cell5)));
         ARIADNE_TESTING_PROVE(definitely(set.separated(cell6)));
@@ -166,43 +209,42 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture
         // Rendering them here duplicated draw coverage already exercised by test_draw().
     }
 
-
-
-
-
     Void test_empty() {
         D = ExactBoxType::unit_box(2);
-        x = Affine<FloatDPBounds>::variables(2,dp);
+        x = Affine<FloatDPBounds>::variables(2, dp);
 
-        ARIADNE_TESTING_NOTE("characteristics = " << get_characteristics(0.125_x*x[0]+1.0_x));
-        set=ValidatedAffineConstrainedImageSet(D, {0.125_x*x[0]+1.0_x, 0.125_x*x[1]+1.0_x} );
-        set.new_parameter_constraint(-1.0_x*x[1] <= -2.0_x);
+        ARIADNE_TESTING_NOTE("characteristics = " << get_characteristics(0.125_x * x[0] + 1.0_x));
+        set = ValidatedAffineConstrainedImageSet(D, {0.125_x * x[0] + 1.0_x, 0.125_x * x[1] + 1.0_x});
+        set.new_parameter_constraint(-1.0_x * x[1] <= -2.0_x);
 
         ARIADNE_TESTING_NOTE("set = " << (set));
         ARIADNE_TESTING_PROVE(set.is_empty());
     }
 
     Void test_logging_branches() {
-        unsigned int const old_verbosity=Logger::instance().configuration().verbosity();
+        const unsigned int old_verbosity = Logger::instance().configuration().verbosity();
         Logger::instance().configuration().set_verbosity(10u);
 
-        D=ExactBoxType::unit_box(2);
-        x=Affine<FloatDPBounds>::variables(2,dp);
-        set=ValidatedAffineConstrainedImageSet(D,{x[0],x[1]});
+        D = ExactBoxType::unit_box(2);
+        x = Affine<FloatDPBounds>::variables(2, dp);
+        set = ValidatedAffineConstrainedImageSet(D, {x[0], x[1]});
 
-        ARIADNE_TESTING_PROVE(!definitely(set.separated(ExactBoxType{{-0.5_x,+0.5_x},{-0.5_x,+0.5_x}})));
+        ARIADNE_TESTING_PROVE(!definitely(set.separated(ExactBoxType{
+            {-0.5_x, +0.5_x},
+            {-0.5_x, +0.5_x}
+        })));
 
-        List<Pair<double,double>> vertices=set.boundary(0,1);
+        List<Pair<double, double>> vertices = set.boundary(0, 1);
         ARIADNE_TESTING_PROVE(!vertices.empty());
 
         // Exercise verbose tracing for the constrained simplex traversal,
         // whose per-pivot messages are not emitted for unconstrained zonotopes.
-        set.new_parameter_constraint(x[0]<=0.0_x);
-        vertices=set.boundary(0,1);
-        ARIADNE_TESTING_PROVE(vertices.size()>=4u);
-        for(auto const& vertex:vertices) {
-            ARIADNE_TESTING_PROVE(vertex.first<=1e-6);
-            ARIADNE_TESTING_PROVE(vertex.first>=-1.000001);
+        set.new_parameter_constraint(x[0] <= 0.0_x);
+        vertices = set.boundary(0, 1);
+        ARIADNE_TESTING_PROVE(vertices.size() >= 4u);
+        for (const auto& vertex: vertices) {
+            ARIADNE_TESTING_PROVE(vertex.first <= 1e-6);
+            ARIADNE_TESTING_PROVE(vertex.first >= -1.000001);
         }
 
         Logger::instance().configuration().set_verbosity(old_verbosity);
@@ -211,52 +253,51 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture
     Void test_invalid() {
         {
             D = ExactBoxType::unit_box(1);
-            x = Affine<FloatDPBounds>::variables(2,dp);
-            ARIADNE_TESTING_EXPECT_EXCEPTION(ValidatedAffineConstrainedImageSet(D, {0.125_x*x[0]+1.0_x, 0.125_x*x[1]+1.0_x} ));
+            x = Affine<FloatDPBounds>::variables(2, dp);
+            ARIADNE_TESTING_EXPECT_EXCEPTION(ValidatedAffineConstrainedImageSet(D, {0.125_x * x[0] + 1.0_x, 0.125_x * x[1] + 1.0_x}));
         }
         {
             D = ExactBoxType::unit_box(2);
-            x = Affine<FloatDPBounds>::variables(2,dp);
-            auto a = Affine<FloatDPBounds>::variables(1,dp);
-            ARIADNE_TESTING_EXPECT_EXCEPTION(ValidatedAffineConstrainedImageSet(D, {0.125_x*x[0]+1.0_x, 0.125_x*x[1]+1.0_x}, {a[0]<=-0.25_x} ));
+            x = Affine<FloatDPBounds>::variables(2, dp);
+            auto a = Affine<FloatDPBounds>::variables(1, dp);
+            ARIADNE_TESTING_EXPECT_EXCEPTION(ValidatedAffineConstrainedImageSet(D, {0.125_x * x[0] + 1.0_x, 0.125_x * x[1] + 1.0_x}, {a[0] <= -0.25_x}));
 
-            set=ValidatedAffineConstrainedImageSet(D,{x[0],x[1]});
-            ARIADNE_TESTING_EXPECT_EXCEPTION(set.new_parameter_constraint(a[0]<=-0.25_x));
+            set = ValidatedAffineConstrainedImageSet(D, {x[0], x[1]});
+            ARIADNE_TESTING_EXPECT_EXCEPTION(set.new_parameter_constraint(a[0] <= -0.25_x));
             ARIADNE_TESTING_EXPECT_EXCEPTION(set.separated(ExactBoxType::unit_box(1)));
             ARIADNE_TESTING_EXPECT_EXCEPTION(set.inside(ExactBoxType::unit_box(1)));
 
-
-            Vector<ValidatedAffineModelDP> bad_models=ValidatedAffineModelDP::scalings(ExactBoxType::unit_box(1),dp);
+            Vector<ValidatedAffineModelDP> bad_models = ValidatedAffineModelDP::scalings(ExactBoxType::unit_box(1), dp);
             List<ValidatedAffineModelConstraintDP> no_constraints;
-            ARIADNE_TESTING_EXPECT_EXCEPTION(ValidatedAffineConstrainedImageSet(D,bad_models,no_constraints));
+            ARIADNE_TESTING_EXPECT_EXCEPTION(ValidatedAffineConstrainedImageSet(D, bad_models, no_constraints));
 
-            ValidatedAffineModelConstraintDP bad_constraint(-1.0_x,bad_models[0],+1.0_x);
+            ValidatedAffineModelConstraintDP bad_constraint(-1.0_x, bad_models[0], +1.0_x);
             List<ValidatedAffineModelConstraintDP> bad_constraints;
             bad_constraints.append(bad_constraint);
-            Vector<ValidatedAffineModelDP> good_models=ValidatedAffineModelDP::scalings(D,dp);
-            ARIADNE_TESTING_EXPECT_EXCEPTION(ValidatedAffineConstrainedImageSet(D,good_models,bad_constraints));
+            Vector<ValidatedAffineModelDP> good_models = ValidatedAffineModelDP::scalings(D, dp);
+            ARIADNE_TESTING_EXPECT_EXCEPTION(ValidatedAffineConstrainedImageSet(D, good_models, bad_constraints));
             ARIADNE_TESTING_EXPECT_EXCEPTION(set.new_constraint(bad_constraint));
 
             ValidatedAffineConstrainedImageSet empty_set(ExactBoxType(0u));
-            ValidatedAffineModelDP zero_model(0u,dp);
-            ValidatedAffineModelConstraintDP zero_model_constraint(-1.0_x,zero_model,+1.0_x);
-            Affine<FloatDPBounds> zero_affine(0u,dp);
+            ValidatedAffineModelDP zero_model(0u, dp);
+            ValidatedAffineModelConstraintDP zero_model_constraint(-1.0_x, zero_model, +1.0_x);
+            Affine<FloatDPBounds> zero_affine(0u, dp);
             ARIADNE_TESTING_EXPECT_EXCEPTION(empty_set.new_constraint(zero_model_constraint));
-            ARIADNE_TESTING_EXPECT_EXCEPTION(empty_set.new_parameter_constraint(zero_affine<=0.0_x));
+            ARIADNE_TESTING_EXPECT_EXCEPTION(empty_set.new_parameter_constraint(zero_affine <= 0.0_x));
             ARIADNE_TESTING_EXPECT_EXCEPTION(empty_set.number_of_parameters());
 
             Vector<Affine<FloatDPBounds>> empty_affine_models;
             Vector<ValidatedAffineModelDP> empty_models;
-            ARIADNE_TESTING_EXPECT_EXCEPTION(ValidatedAffineConstrainedImageSet(D,empty_affine_models));
-            ARIADNE_TESTING_EXPECT_EXCEPTION(ValidatedAffineConstrainedImageSet(D,empty_models,no_constraints));
+            ARIADNE_TESTING_EXPECT_EXCEPTION(ValidatedAffineConstrainedImageSet(D, empty_affine_models));
+            ARIADNE_TESTING_EXPECT_EXCEPTION(ValidatedAffineConstrainedImageSet(D, empty_models, no_constraints));
             ARIADNE_TESTING_EXPECT_EXCEPTION(ValidatedAffineConstrainedImageSet{empty_models});
 
-            Matrix<FloatDP> bad_matrix(1u,1u,dp);
-            Vector<FloatDP> bad_offset(2u,dp);
-            ARIADNE_TESTING_EXPECT_EXCEPTION(ValidatedAffineConstrainedImageSet(D,bad_matrix,bad_offset));
-            Matrix<FloatDP> empty_matrix(0u,0u,dp);
-            Vector<FloatDP> empty_offset(0u,dp);
-            ARIADNE_TESTING_EXPECT_EXCEPTION(ValidatedAffineConstrainedImageSet(ExactBoxType(0u),empty_matrix,empty_offset));
+            Matrix<FloatDP> bad_matrix(1u, 1u, dp);
+            Vector<FloatDP> bad_offset(2u, dp);
+            ARIADNE_TESTING_EXPECT_EXCEPTION(ValidatedAffineConstrainedImageSet(D, bad_matrix, bad_offset));
+            Matrix<FloatDP> empty_matrix(0u, 0u, dp);
+            Vector<FloatDP> empty_offset(0u, dp);
+            ARIADNE_TESTING_EXPECT_EXCEPTION(ValidatedAffineConstrainedImageSet(ExactBoxType(0u), empty_matrix, empty_offset));
         }
     }
 
@@ -264,36 +305,36 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture
         // A square intersected with x<=0 is a rectangle [-1,0] x [-1,1].
         // In contrast to a zonotope, its boundary requires pivoting along
         // the affine inequality's slack-variable constraints.
-        D=ExactBoxType::unit_box(2);
-        x=Affine<FloatDPBounds>::variables(2,dp);
-        set=ValidatedAffineConstrainedImageSet(D,{x[0],x[1]},{x[0]<=0.0_x});
-        ARIADNE_TESTING_EXPECT_EQUAL(set.number_of_constraints(),1u);
+        D = ExactBoxType::unit_box(2);
+        x = Affine<FloatDPBounds>::variables(2, dp);
+        set = ValidatedAffineConstrainedImageSet(D, {x[0], x[1]}, {x[0] <= 0.0_x});
+        ARIADNE_TESTING_EXPECT_EQUAL(set.number_of_constraints(), 1u);
 
-        List<Pair<double,double>> vertices=set.boundary(0,1);
-        ARIADNE_TESTING_PROVE(vertices.size()>=4u);
-        double min_x=+2.0, max_x=-2.0, min_y=+2.0, max_y=-2.0;
-        for(auto const& vertex:vertices) {
-            min_x=std::min(min_x,vertex.first);
-            max_x=std::max(max_x,vertex.first);
-            min_y=std::min(min_y,vertex.second);
-            max_y=std::max(max_y,vertex.second);
+        List<Pair<double, double>> vertices = set.boundary(0, 1);
+        ARIADNE_TESTING_PROVE(vertices.size() >= 4u);
+        double min_x = +2.0, max_x = -2.0, min_y = +2.0, max_y = -2.0;
+        for (const auto& vertex: vertices) {
+            min_x = std::min(min_x, vertex.first);
+            max_x = std::max(max_x, vertex.first);
+            min_y = std::min(min_y, vertex.second);
+            max_y = std::max(max_y, vertex.second);
         }
-        ARIADNE_TESTING_PROVE(std::abs(min_x+1.0)<1e-6);
-        ARIADNE_TESTING_PROVE(std::abs(max_x)<1e-6);
-        ARIADNE_TESTING_PROVE(std::abs(min_y+1.0)<1e-6);
-        ARIADNE_TESTING_PROVE(std::abs(max_y-1.0)<1e-6);
+        ARIADNE_TESTING_PROVE(std::abs(min_x + 1.0) < 1e-6);
+        ARIADNE_TESTING_PROVE(std::abs(max_x) < 1e-6);
+        ARIADNE_TESTING_PROVE(std::abs(min_y + 1.0) < 1e-6);
+        ARIADNE_TESTING_PROVE(std::abs(max_y - 1.0) < 1e-6);
     }
 
     Void test_empty_constrained_boundary() {
         // The parameter domain is [-1,1]^2, but -x[1]<=-2 requires
         // x[1]>=2. The affine image is therefore empty and has no boundary.
-        D=ExactBoxType::unit_box(2);
-        x=Affine<FloatDPBounds>::variables(2,dp);
-        set=ValidatedAffineConstrainedImageSet(D,{x[0],x[1]});
-        set.new_parameter_constraint(-1.0_x*x[1] <= -2.0_x);
+        D = ExactBoxType::unit_box(2);
+        x = Affine<FloatDPBounds>::variables(2, dp);
+        set = ValidatedAffineConstrainedImageSet(D, {x[0], x[1]});
+        set.new_parameter_constraint(-1.0_x * x[1] <= -2.0_x);
 
         ARIADNE_TESTING_PROVE(definitely(set.is_empty()));
-        List<Pair<double,double>> vertices=set.boundary(0,1);
+        List<Pair<double, double>> vertices = set.boundary(0, 1);
         ARIADNE_TESTING_PROVE(vertices.empty());
     }
 
@@ -301,42 +342,42 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture
         // Keep n=501: the 501 distinct planar generators yield 2*n=1002
         // boundary vertices, deliberately exceeding the historical 1000-step
         // traversal cap.  Reducing n below 501 would weaken this regression.
-        SizeType const n=501u;
-        D=ExactBoxType::unit_box(n);
+        const SizeType n = 501u;
+        D = ExactBoxType::unit_box(n);
 
-        Affine<FloatDPBounds> fx(n,dp);
-        Affine<FloatDPBounds> fy(n,dp);
-        for(SizeType i=0; i!=n; ++i) {
-            Nat j=static_cast<Nat>(i);
-            fx[j]=FloatDPBounds(1,dp);
-            fy[j]=FloatDPBounds(static_cast<Int>(i+1u),dp);
+        Affine<FloatDPBounds> fx(n, dp);
+        Affine<FloatDPBounds> fy(n, dp);
+        for (SizeType i = 0; i != n; ++i) {
+            Nat j = static_cast<Nat>(i);
+            fx[j] = FloatDPBounds(1, dp);
+            fy[j] = FloatDPBounds(static_cast<Int>(i + 1u), dp);
         }
 
-        set=ValidatedAffineConstrainedImageSet(D,{fx,fy});
-        List<Pair<double,double>> vertices=set.boundary(0,1);
-        ARIADNE_TESTING_PROVE(vertices.size()>1000u);
+        set = ValidatedAffineConstrainedImageSet(D, {fx, fy});
+        List<Pair<double, double>> vertices = set.boundary(0, 1);
+        ARIADNE_TESTING_PROVE(vertices.size() > 1000u);
     }
 
     Void test_collinear_negative_zonotope_boundary() {
         // Two identical, negatively oriented generators must be traversed
         // from their upper parameter bounds.  Their equal angles also require
         // the deterministic generator-index tie-break in boundary sorting.
-        D=ExactBoxType::unit_box(3);
-        Affine<FloatDPBounds> fx(3,dp);
-        Affine<FloatDPBounds> fy(3,dp);
-        fx[0]=FloatDPBounds(-65536,dp);
-        fx[1]=FloatDPBounds(-65536,dp);
-        fx[2]=FloatDPBounds(+65536,dp);
-        fy[0]=FloatDPBounds(+65536,dp);
-        fy[1]=FloatDPBounds(+65536,dp);
-        fy[2]=FloatDPBounds(+65536,dp);
+        D = ExactBoxType::unit_box(3);
+        Affine<FloatDPBounds> fx(3, dp);
+        Affine<FloatDPBounds> fy(3, dp);
+        fx[0] = FloatDPBounds(-65536, dp);
+        fx[1] = FloatDPBounds(-65536, dp);
+        fx[2] = FloatDPBounds(+65536, dp);
+        fy[0] = FloatDPBounds(+65536, dp);
+        fy[1] = FloatDPBounds(+65536, dp);
+        fy[2] = FloatDPBounds(+65536, dp);
 
-        set=ValidatedAffineConstrainedImageSet(D,{fx,fy});
-        List<Pair<double,double>> vertices=set.boundary(0,1);
-        ARIADNE_TESTING_EXPECT_EQUAL(vertices.size(),10u);
+        set = ValidatedAffineConstrainedImageSet(D, {fx, fy});
+        List<Pair<double, double>> vertices = set.boundary(0, 1);
+        ARIADNE_TESTING_EXPECT_EQUAL(vertices.size(), 10u);
 
-        bool has_left=false, has_right=false, has_bottom=false, has_top=false;
-        for(auto const& vertex:vertices) {
+        bool has_left = false, has_right = false, has_bottom = false, has_top = false;
+        for (const auto& vertex: vertices) {
             has_left = has_left || vertex.first < -196607.0;
             has_right = has_right || vertex.first > 196607.0;
             has_bottom = has_bottom || vertex.second < -196607.0;
@@ -350,40 +391,29 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture
         // A near-vertical edge can therefore have a slightly negative outgoing
         // horizontal component at the reported minimiser.  Its atan2 angle must
         // be wrapped to [0,2*pi) rather than ordered before the other edges.
-        D=ExactBoxType::unit_box(1);
-        Affine<FloatDPBounds> fx(1,dp);
-        Affine<FloatDPBounds> fy(1,dp);
-        fx[0]=FloatDPBounds(-4e-13_pr,dp);
-        fy[0]=FloatDPBounds(1,dp);
+        D = ExactBoxType::unit_box(1);
+        Affine<FloatDPBounds> fx(1, dp);
+        Affine<FloatDPBounds> fy(1, dp);
+        fx[0] = FloatDPBounds(-4e-13_pr, dp);
+        fy[0] = FloatDPBounds(1, dp);
 
-        set=ValidatedAffineConstrainedImageSet(D,{fx,fy});
-        List<Pair<double,double>> vertices=set.boundary(0,1);
-        ARIADNE_TESTING_EXPECT_EQUAL(vertices.size(),6u);
+        set = ValidatedAffineConstrainedImageSet(D, {fx, fy});
+        List<Pair<double, double>> vertices = set.boundary(0, 1);
+        ARIADNE_TESTING_EXPECT_EQUAL(vertices.size(), 6u);
 
-        bool narrow_x=true;
-        bool has_low_y=false;
-        bool has_high_y=false;
-        for(auto const& vertex:vertices) {
-            narrow_x=narrow_x && vertex.first > -1e-8 && vertex.first < +1e-8;
-            has_low_y=has_low_y || vertex.second < -0.9;
-            has_high_y=has_high_y || vertex.second > +0.9;
+        bool narrow_x = true;
+        bool has_low_y = false;
+        bool has_high_y = false;
+        for (const auto& vertex: vertices) {
+            narrow_x = narrow_x && vertex.first > -1e-8 && vertex.first < +1e-8;
+            has_low_y = has_low_y || vertex.second < -0.9;
+            has_high_y = has_high_y || vertex.second > +0.9;
         }
         ARIADNE_TESTING_PROVE(narrow_x);
         ARIADNE_TESTING_PROVE(has_low_y);
         ARIADNE_TESTING_PROVE(has_high_y);
     }
-
-
-
-
-
-
-
-
-
 };
-
-
 
 int main(int argc, char** argv) {
     ARIADNE_TESTING_SUITE("test_affine_sets");

@@ -26,132 +26,105 @@
  *  @brief Implement Euclidean curves and interpolated curves.
  */
 
-#include "function/functional.hpp"
-#include "function/taylor_model.hpp"
-#include "function/formula.hpp"
-#include <cassert>
-
-#include "algebra/vector.hpp"
-#include "algebra/matrix.hpp"
-#include "algebra/differential.hpp"
-#include "algebra/algebra.hpp"
-#include "geometry/point.hpp"
-#include "geometry/box.hpp"
-
 #include "set/curve.hpp"
 
+#include <cassert>
+
+#include "algebra/algebra.hpp"
+#include "algebra/differential.hpp"
+#include "algebra/matrix.hpp"
+#include "algebra/vector.hpp"
+#include "function/formula.hpp"
+#include "function/functional.hpp"
+#include "function/taylor_model.hpp"
+#include "geometry/box.hpp"
+#include "geometry/point.hpp"
 
 namespace Ariadne {
 
-
-
 Curve::Curve(const EffectiveVectorUnivariateFunction& f)
-    : _function(f)
-{
+    : _function(f) {
     // The univariate function type fixes the argument size to one.
 }
 
-
 Curve::Curve(const Curve& c)
-    : _function(c._function)
-{
+    : _function(c._function) {
 }
 
-
 Curve*
-Curve::clone() const
-{
+    Curve::clone() const {
     return new Curve(*this);
 }
 
-
 DimensionType
-Curve::dimension() const
-{
+    Curve::dimension() const {
     return this->_function.result_size();
 }
 
-
 DegreeType
-Curve::smoothness() const
-{
+    Curve::smoothness() const {
     return SMOOTH;
 }
 
-
-
 Curve::PointType
-Curve::value(const ParameterType& s) const
-{
-    Vector<FloatDPApproximation> fv=this->_function.evaluate(s);
+    Curve::value(const ParameterType& s) const {
+    Vector<FloatDPApproximation> fv = this->_function.evaluate(s);
     return PointType(fv);
 }
 
-
 Curve::TangentVectorType
-Curve::tangent(const ParameterType& s) const
-{
-    return Ariadne::tangent(this->_function,s);
+    Curve::tangent(const ParameterType& s) const {
+    return Ariadne::tangent(this->_function, s);
 }
 
-
-
 OutputStream&
-Curve::_write(OutputStream& os) const
-{
+    Curve::_write(OutputStream& os) const {
     return os << "Curve( function=" << this->_function << " )";
 }
 
-
-
 InterpolatedCurve*
-InterpolatedCurve::clone() const
-{
+    InterpolatedCurve::clone() const {
     return new InterpolatedCurve(*this);
 }
 
-Void
-InterpolatedCurve::insert(const ParameterType& s, const PointType& pt) {
-    if(!this->_points.empty()) { ARIADNE_PRECONDITION(pt.size()==this->dimension()); }
-    this->_points.insert(Pair< ParameterType, PointType >(s,pt));
+Void InterpolatedCurve::insert(const ParameterType& s, const PointType& pt) {
+    if (!this->_points.empty()) {
+        ARIADNE_PRECONDITION(pt.size() == this->dimension());
+    }
+    this->_points.insert(Pair<ParameterType, PointType>(s, pt));
 }
 
-Void
-InterpolatedCurve::insert(const Dyadic& s, const PointType& pt) {
+Void InterpolatedCurve::insert(const Dyadic& s, const PointType& pt) {
     PrecisionType spr;
-    this->insert(ParameterType(s,spr),pt);
+    this->insert(ParameterType(s, spr), pt);
 }
 
-Void
-InterpolatedCurve::insert(const RawFloatDP& s, const Vector<RawFloatDP>& pt) {
+Void InterpolatedCurve::insert(const RawFloatDP& s, const Vector<RawFloatDP>& pt) {
     // The typed overload checks the dimension after scalar conversion.
-    this->insert(ParameterType(s),PointType(Vector<FloatDPApproximation>(pt)));
+    this->insert(ParameterType(s), PointType(Vector<FloatDPApproximation>(pt)));
 }
 
 UpperBoxType
-InterpolatedCurve::bounding_box() const
-{
+    InterpolatedCurve::bounding_box() const {
     // Approximation<FloatDP> stores a raw FloatDP, but the enclosing
     // Point objects are not interchangeable by reinterpret_cast.
     // Convert each scalar explicitly to preserve type safety.
-    const PointType& first=this->_points.begin()->second;
+    const PointType& first = this->_points.begin()->second;
     ExactBoxType bx(this->dimension());
-    for(SizeType i=0; i!=bx.dimension(); ++i) {
-        bx[i]=ExactIntervalType(cast_exact(first[i]));
+    for (SizeType i = 0; i != bx.dimension(); ++i) {
+        bx[i] = ExactIntervalType(cast_exact(first[i]));
     }
-    for(ConstIterator iter=this->_points.begin(); iter!=this->_points.end(); ++iter) {
-        for(SizeType i=0; i!=bx.dimension(); ++i) {
-            bx[i]=hull(bx[i],cast_exact(iter->second[i]));
+    for (ConstIterator iter = this->_points.begin(); iter != this->_points.end(); ++iter) {
+        for (SizeType i = 0; i != bx.dimension(); ++i) {
+            bx[i] = hull(bx[i], cast_exact(iter->second[i]));
         }
     }
     return bx;
 }
 
 OutputStream&
-InterpolatedCurve::_write(OutputStream& os) const
-{
+    InterpolatedCurve::_write(OutputStream& os) const {
     return os << (*this);
 }
-
 
 } // namespace Ariadne

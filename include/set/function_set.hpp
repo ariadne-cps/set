@@ -30,24 +30,20 @@
 #define ARIADNE_FUNCTION_SET_HPP
 
 #include <iosfwd>
-
 #include <memory>
 
-#include "utility/macros.hpp"
-#include "utility/container.hpp"
-#include "utility/container.hpp"
-#include "numeric/numeric.hpp"
 #include "algebra/vector.hpp"
-#include "function/operation_node.hpp"
-#include "geometry/set_interface.hpp"
+#include "function/constraint.hpp"
 #include "function/function.hpp"
 #include "function/function_model.hpp"
-#include "function/constraint.hpp"
-
+#include "function/operation_node.hpp"
 #include "geometry/box.hpp"
+#include "geometry/set_interface.hpp"
+#include "numeric/numeric.hpp"
+#include "utility/container.hpp"
+#include "utility/macros.hpp"
 
 namespace Ariadne {
-
 
 class ImageSet;
 class ConstraintSet;
@@ -63,24 +59,21 @@ typedef ConstrainedImageSet EffectiveConstrainedImageSet;
 class ValidatedConstrainedImageSet;
 class ValidatedAffineConstrainedImageSet;
 
-
-
 class Drawer;
-
 
 //! \ingroup GeometryModule ExactSetSubModule
 //! \brief A set defined as the image of a box \f$D\f$ under a function \f$f\f$.
 //! \see ConstrainedImageSet
-class ImageSet { };
+class ImageSet {};
 
 //! \ingroup GeometryModule ExactSetSubModule
 //! \brief A set defined as the intersection of an exact box with preimage of an exact box (the \em codomain) under a continuous function.
 //! The set is described as \f$S=D\cap g^{-1}(C) = \{ x\in D \mid g(x)\in C\}\f$ where \f$D\f$ is the domain, \f$C\f$ is the codomain and \f$g\f$ the function.
 class ConstraintSet
-    : public virtual EffectiveEuclideanRegularSetInterface
-{
+    : public virtual EffectiveEuclideanRegularSetInterface {
     SizeType _dimension;
-    List< EffectiveConstraint > _constraints;
+    List<EffectiveConstraint> _constraints;
+
   public:
     //! \brief Construct the preimage of \a C under \a g.
     ConstraintSet(const EffectiveVectorMultivariateFunction& g, const RealBox& C);
@@ -95,9 +88,9 @@ class ConstraintSet
     //! \brief The number of constraints.
     SizeType number_of_constraints() const { return this->_constraints.size(); };
     //! \brief The constraints.
-    List<EffectiveConstraint> const& constraints() const { return this->_constraints; }
+    const List<EffectiveConstraint>& constraints() const { return this->_constraints; }
     //! \brief The \a i<sup>th</sup> constraint.
-    EffectiveConstraint const& constraint(SizeType i) const { return this->_constraints[i]; }
+    const EffectiveConstraint& constraint(SizeType i) const { return this->_constraints[i]; }
 
     virtual ConstraintSet* clone() const override;
     virtual DimensionType dimension() const override;
@@ -114,10 +107,10 @@ class ConstraintSet
     friend BoundedConstraintSet intersection(const RealBox& bx, const ConstraintSet& cs);
 
     friend OutputStream& operator<<(OutputStream&, const ConstraintSet&);
+
   private:
     virtual OutputStream& _write(OutputStream&) const override;
 };
-
 
 //! \ingroup GeometryModule ExactSetSubModule
 //! \brief A set defined as the intersection of an exact box with preimage of an exact box (the \em codomain) under a continuous function.
@@ -127,7 +120,8 @@ class BoundedConstraintSet
 
 {
     RealBox _domain;
-    List< EffectiveConstraint > _constraints;
+    List<EffectiveConstraint> _constraints;
+
   public:
     //! \brief Construct the preimage of \a C under \a g.
     BoundedConstraintSet(const RealBox& D, const EffectiveVectorMultivariateFunction& g, const RealBox& C);
@@ -146,9 +140,9 @@ class BoundedConstraintSet
     //! \brief The number of constraints.
     SizeType number_of_constraints() const { return this->_constraints.size(); };
     //! \brief The constraints.
-    List<EffectiveConstraint> const& constraints() const { return this->_constraints; }
+    const List<EffectiveConstraint>& constraints() const { return this->_constraints; }
     //! \brief The \a i<sup>th</sup> constraint.
-    EffectiveConstraint const& constraint(SizeType i) const { return this->_constraints[i]; }
+    const EffectiveConstraint& constraint(SizeType i) const { return this->_constraints[i]; }
 
     virtual BoundedConstraintSet* clone() const override;
     virtual DimensionType dimension() const override;
@@ -171,10 +165,10 @@ class BoundedConstraintSet
     friend ConstrainedImageSet image(const BoundedConstraintSet& set, const EffectiveVectorMultivariateFunction& function);
 
     friend OutputStream& operator<<(OutputStream& os, const BoundedConstraintSet& set);
+
   private:
     virtual OutputStream& _write(OutputStream&) const override;
 };
-
 
 //! \ingroup GeometryModule ExactSetSubModule
 //! \brief A set defined as the image of the intersection of a box \f$D\f$ and a constraint set \f$g^{-1}(C)\f$ under a function \f$f\f$.
@@ -186,18 +180,21 @@ class ConstrainedImageSet
 {
     RealBox _domain;
     EffectiveVectorMultivariateFunction _function;
-    List< EffectiveConstraint > _constraints;
+    List<EffectiveConstraint> _constraints;
+
   public:
     //! \brief Construct the set with zero-dimensional parameterisation in zero dimensions with no constraints.
-    ConstrainedImageSet() : _domain(), _function(EffectiveVectorMultivariateFunction::zeros(0u,0u)) { }
+    ConstrainedImageSet() : _domain(), _function(EffectiveVectorMultivariateFunction::zeros(0u, 0u)) {}
     //! \brief Construct the box \a dom.
-    ConstrainedImageSet(const RealBox& dom) : _domain(dom), _function(EffectiveVectorMultivariateFunction::identity(dom.size())) { }
+    ConstrainedImageSet(const RealBox& dom) : _domain(dom), _function(EffectiveVectorMultivariateFunction::identity(dom.size())) {}
     //! \brief Construct the image of \a dom under \a fn.
     ConstrainedImageSet(const RealBox& dom, const EffectiveVectorMultivariateFunction& fn) : _domain(dom), _function(fn) {
-        ARIADNE_PRECONDITION_MSG(dom.size()==fn.argument_size(),"dom="<<dom<<", fn="<<fn); }
+        ARIADNE_PRECONDITION_MSG(dom.size() == fn.argument_size(), "dom=" << dom << ", fn=" << fn);
+    }
     //! \brief Construct the image of \a dom under \a fn, using constraints \a c.
     ConstrainedImageSet(const RealBox& dom, const EffectiveVectorMultivariateFunction& fn, const List<EffectiveConstraint>& c) : _domain(dom), _function(fn), _constraints(c) {
-        ARIADNE_PRECONDITION_MSG(dom.size()==fn.argument_size(),"dom="<<dom<<", fn="<<fn); }
+        ARIADNE_PRECONDITION_MSG(dom.size() == fn.argument_size(), "dom=" << dom << ", fn=" << fn);
+    }
     //! \brief Convert from a bounded constraint set.
     ConstrainedImageSet(const BoundedConstraintSet& set);
     //! \brief The domain of the set.
@@ -215,22 +212,24 @@ class ConstrainedImageSet
     //! \brief The number of constraints.
     SizeType number_of_constraints() const { return this->_constraints.size(); };
     //! \brief The \a i<sup>th</sup> constraint.
-    EffectiveConstraint const& constraint(SizeType i) const { return this->_constraints[i]; }
+    const EffectiveConstraint& constraint(SizeType i) const { return this->_constraints[i]; }
 
     //! \brief Apply the function \f$h\f$ to obtain the set \f$h\circ f(D\cap g^{-1}(C))\f$.
     Void apply(const EffectiveVectorMultivariateFunction& h) {
-        this->_function=compose(h,this->_function);
+        this->_function = compose(h, this->_function);
     }
 
     //! \brief Introduce a new constraint of the form \f$g(y)\in [c_l,c_u]\f$.
     Void new_parameter_constraint(const EffectiveConstraint& c) {
-        ARIADNE_PRECONDITION_MSG(c.function().argument_size()==this->domain().size(),*this<<", "<<c);
-        this->_constraints.append(c); }
+        ARIADNE_PRECONDITION_MSG(c.function().argument_size() == this->domain().size(), *this << ", " << c);
+        this->_constraints.append(c);
+    }
 
     //! \brief Introduce a new constraint of the form \f$g(y)\in [c_l,c_u]\f$.
     Void new_space_constraint(const EffectiveConstraint& c) {
-        ARIADNE_PRECONDITION_MSG(c.function().argument_size()==this->_function.result_size(),*this<<", "<<c);
-        this->_constraints.append(EffectiveConstraint(c.lower_bound(),compose(c.function(),_function),c.upper_bound())); }
+        ARIADNE_PRECONDITION_MSG(c.function().argument_size() == this->_function.result_size(), *this << ", " << c);
+        this->_constraints.append(EffectiveConstraint(c.lower_bound(), compose(c.function(), _function), c.upper_bound()));
+    }
 
     virtual ConstrainedImageSet* clone() const override { return new ConstrainedImageSet(*this); }
     virtual DimensionType dimension() const override { return this->_function.result_size(); }
@@ -242,9 +241,9 @@ class ConstrainedImageSet
     //! \brief Construct an affine approximation, with undefined accuracy.
     ValidatedAffineConstrainedImageSet affine_approximation() const;
     //! \brief Split into two pieces by subdividing along a coordinate direction.
-    Pair<ConstrainedImageSet,ConstrainedImageSet> split() const;
+    Pair<ConstrainedImageSet, ConstrainedImageSet> split() const;
     //! \brief Split into two pieces by subdividing along the \a j<sup>th</sup> coordinate direction.
-    Pair<ConstrainedImageSet,ConstrainedImageSet> split(SizeType j) const;
+    Pair<ConstrainedImageSet, ConstrainedImageSet> split(SizeType j) const;
 
     //! \brief Test if the set is contained in (the interior of) a box.
     virtual LowerKleenean inside(const ExactBoxType& bx) const override;
@@ -266,15 +265,14 @@ class ConstrainedImageSet
     //! \brief Draw to a canvas.
 
     //! \brief Compute the image of \f$S\f$ under the function \f$h\f$.
-    friend ConstrainedImageSet image(ConstrainedImageSet set, EffectiveVectorMultivariateFunction const& h);
+    friend ConstrainedImageSet image(ConstrainedImageSet set, const EffectiveVectorMultivariateFunction& h);
 
     //! \brief Write to an output stream.
     friend OutputStream& operator<<(OutputStream&, const ConstrainedImageSet&);
+
   private:
     virtual OutputStream& _write(OutputStream&) const override;
 };
-
-
 
 //! \ingroup GeometryModule ExactSetSubModule
 //! \brief A set defined as the image of the intersection of a box \f$D\f$ and a constraint set \f$g^{-1}(C)\f$ under a function \f$f\f$.
@@ -286,6 +284,7 @@ class ConstrainedImageSet
 class PreparedConstrainedImageSetSeparation {
     struct Data;
     std::shared_ptr<const Data> _data;
+
   public:
     explicit PreparedConstrainedImageSetSeparation(const ConstrainedImageSet& set);
     ValidatedLowerKleenean separated(const ExactBoxType& box) const;
@@ -299,22 +298,25 @@ class ValidatedConstrainedImageSet
     ExactBoxType _domain;
     ExactBoxType _reduced_domain;
     ValidatedVectorMultivariateFunction _function;
-    List< ValidatedConstraint > _constraints;
+    List<ValidatedConstraint> _constraints;
+
   public:
     //! \brief Construct the set with zero-dimensional parameterisation in zero dimensions with no constraints.
-    ValidatedConstrainedImageSet() : _domain(), _function(ValidatedVectorMultivariateFunction::zeros(0u,0u)) { }
+    ValidatedConstrainedImageSet() : _domain(), _function(ValidatedVectorMultivariateFunction::zeros(0u, 0u)) {}
     //! \brief Construct the box \a dom.
     ValidatedConstrainedImageSet(const ExactBoxType& dom)
-        : _domain(dom), _reduced_domain(dom)
-        , _function(static_cast<ValidatedVectorMultivariateFunction const&>(EffectiveVectorMultivariateFunction::identity(dom.size()))) { }
+        : _domain(dom), _reduced_domain(dom), _function(static_cast<const ValidatedVectorMultivariateFunction&>(EffectiveVectorMultivariateFunction::identity(dom.size()))) {}
     //! \brief Construct the image of \a dom under \a fn.
     ValidatedConstrainedImageSet(const ExactBoxType& dom, const ValidatedVectorMultivariateFunction& fn) : _domain(dom), _reduced_domain(dom), _function(fn) {
-        ARIADNE_PRECONDITION_MSG(dom.size()==fn.argument_size(),"dom="<<dom<<", fn="<<fn); }
+        ARIADNE_PRECONDITION_MSG(dom.size() == fn.argument_size(), "dom=" << dom << ", fn=" << fn);
+    }
     ValidatedConstrainedImageSet(const ExactBoxType& dom, const ValidatedVectorMultivariateFunctionModelDP& fn) : _domain(dom), _reduced_domain(dom), _function(fn.raw_pointer()->_clone()) {
-        ARIADNE_PRECONDITION_MSG(dom.size()==fn.argument_size(),"dom="<<dom<<", fn="<<fn); }
+        ARIADNE_PRECONDITION_MSG(dom.size() == fn.argument_size(), "dom=" << dom << ", fn=" << fn);
+    }
     //! \brief Construct the image of \a dom under \a fn.
     ValidatedConstrainedImageSet(const ExactBoxType& dom, const ValidatedVectorMultivariateFunction& fn, const List<ValidatedConstraint>& cnstr) : _domain(dom), _reduced_domain(dom), _function(fn), _constraints(cnstr) {
-        ARIADNE_PRECONDITION_MSG(dom.size()==fn.argument_size(),"dom="<<dom<<", fn="<<fn); }
+        ARIADNE_PRECONDITION_MSG(dom.size() == fn.argument_size(), "dom=" << dom << ", fn=" << fn);
+    }
 
     //! \brief The domain of the set.
     const ExactBoxType& domain() const { return this->_domain; }
@@ -324,7 +326,7 @@ class ValidatedConstrainedImageSet
     //! \brief The constraints used to define the set.
     const List<ValidatedConstraint> constraints() const { return this->_constraints; }
     //! \brief The \a i<sup>th</sup> constraint.
-    ValidatedConstraint const constraint(SizeType i) const { return this->_constraints[i]; };
+    const ValidatedConstraint constraint(SizeType i) const { return this->_constraints[i]; };
     //! \brief The number of parameters used to define the set, which equals the dimension of \f$D\f$.
     SizeType number_of_parameters() const { return this->_domain.size(); };
     //! \brief The number of constraints.
@@ -332,19 +334,19 @@ class ValidatedConstrainedImageSet
 
     //! \brief Apply the function \f$h\f$ to obtain the set \f$h\circ f(D\cap g^{-1}(C))\f$.
     Void apply(const ValidatedVectorMultivariateFunction& h) {
-        this->_function=compose(h,this->_function);
+        this->_function = compose(h, this->_function);
     }
 
     //! \brief Introduce a new constraint of the form \f$g(s)\in [c_l,c_u]\f$.
     Void new_parameter_constraint(const ValidatedConstraint& c) {
-        ARIADNE_PRECONDITION_MSG(c.function().argument_size()==this->number_of_parameters(),*this<<", "<<c);
+        ARIADNE_PRECONDITION_MSG(c.function().argument_size() == this->number_of_parameters(), *this << ", " << c);
         this->_constraints.append(c);
     }
 
     //! \brief Introduce a new constraint of the form \f$g(x)\in [c_l,c_u]\f$.
     Void new_space_constraint(const ValidatedConstraint& c) {
-        ARIADNE_PRECONDITION_MSG(c.function().argument_size()==this->dimension(),*this<<", "<<c);
-        this->_constraints.append(ValidatedConstraint(c.lower_bound(),compose(c.function(),this->function()),c.upper_bound()));
+        ARIADNE_PRECONDITION_MSG(c.function().argument_size() == this->dimension(), *this << ", " << c);
+        this->_constraints.append(ValidatedConstraint(c.lower_bound(), compose(c.function(), this->function()), c.upper_bound()));
     }
 
     virtual ValidatedConstrainedImageSet* clone() const override { return new ValidatedConstrainedImageSet(*this); }
@@ -362,11 +364,11 @@ class ValidatedConstrainedImageSet
     //! \brief Construct an affine approximation, with undefined accuracy.
     ValidatedAffineConstrainedImageSet affine_approximation() const;
     //! \brief Split into two pieces by subdividing along a coordinate direction.
-    Pair<ValidatedConstrainedImageSet,ValidatedConstrainedImageSet> split() const;
+    Pair<ValidatedConstrainedImageSet, ValidatedConstrainedImageSet> split() const;
     //! \brief Split into two pieces by subdividing along the \a j<sup>th</sup> coordinate direction.
-    Pair<ValidatedConstrainedImageSet,ValidatedConstrainedImageSet> split(SizeType j) const;
+    Pair<ValidatedConstrainedImageSet, ValidatedConstrainedImageSet> split(SizeType j) const;
     //! \brief Restrict the parameter domain to \a parameter_subdomain.
-    ValidatedConstrainedImageSet restriction(ExactBoxType const& new_domain) const;
+    ValidatedConstrainedImageSet restriction(const ExactBoxType& new_domain) const;
 
     //! \brief Test if the set is empty.
     ValidatedKleenean is_empty() const;
@@ -382,18 +384,17 @@ class ValidatedConstrainedImageSet
 
     //! \brief Draw to a canvas.
 
-    friend ValidatedConstrainedImageSet image(ValidatedConstrainedImageSet set, ValidatedVectorMultivariateFunction const& h);
+    friend ValidatedConstrainedImageSet image(ValidatedConstrainedImageSet set, const ValidatedVectorMultivariateFunction& h);
     //! \brief Enclose two unconstrained images whose parameter domains differ in at most one overlapping or touching coordinate.
     friend ValidatedConstrainedImageSet join(const ValidatedConstrainedImageSet& set1, const ValidatedConstrainedImageSet& set2);
 
     //! \brief Write to an output stream.
     friend OutputStream& operator<<(OutputStream&, const ValidatedConstrainedImageSet&);
+
   private:
     virtual OutputStream& _write(OutputStream&) const override;
 };
 
-
-} //namespace Ariadne
-
+} // namespace Ariadne
 
 #endif

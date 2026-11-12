@@ -32,11 +32,9 @@
 #include <iosfwd>
 #include <vector>
 
-#include "foundation/logical.hpp"
-
-#include "algebra/vector.hpp"
 #include "algebra/matrix.hpp"
-
+#include "algebra/vector.hpp"
+#include "foundation/logical.hpp"
 #include "geometry/set_interface.hpp"
 #include "set/function_set.hpp"
 
@@ -45,9 +43,6 @@ namespace Ariadne {
 class Polytope;
 class Polyhedron;
 
-
-
-
 /*! \brief A polyhedron (not necessarily is_bounded polyhedral set) described by a system of linear inequalities.
  *
  *  The set is described as
@@ -55,8 +50,7 @@ class Polyhedron;
  *  where \f$A\f$ is a \f$n\times d\f$ matrix and \f$b\f$ is a vector of size \f$n\f$.
  */
 class Polyhedron
-    : public RegularSetInterface
-{
+    : public RegularSetInterface {
   public:
     //!@{
     //! \name Constructors and destructor
@@ -65,12 +59,13 @@ class Polyhedron
     explicit Polyhedron();
 
     //! \brief Construct full Euclidean space of dimension \a n.
-    explicit Polyhedron(DimensionType n=0u);
+    explicit Polyhedron(DimensionType n = 0u);
 
     //! \brief Construct a polyhedron of dimension \a d with \a nc constraints from the data in the
     //! Array beginning at \a data. The jth element of the ith constraint is stored in position i*(d+1)+j,
     //! and the ith inhomogeneous term is stored in position i*(d+1)+d.
-    template<class XX> Polyhedron(DimensionType d, SizeType nc, const XX* data);
+    template<class XX>
+    Polyhedron(DimensionType d, SizeType nc, const XX* data);
 
     //! \brief Construct the polyhedron defined by the matrix equations \f$Ax\leq b\f$.
     explicit Polyhedron(const Matrix<FloatDP>& A, const Vector<FloatDP>& b);
@@ -86,7 +81,6 @@ class Polyhedron
 
     //!@}
 
-
     //!@{
     //! \name Data access
 
@@ -97,7 +91,6 @@ class Polyhedron
     //! \brief The vector \f$b\f$ in the inequalities \f$Ax\leq b\f$.
     Vector<FloatDP> b() const;
     //!@}
-
 
     //!@{
     //! \name Geometric operations
@@ -124,7 +117,7 @@ class Polyhedron
     Polyhedron halfspace(SizeType i) const;
 
     //! \brief Convert to a polytope.
-    operator Polytope () const ;
+    operator Polytope() const;
 
     //! \brief The intersection of two polyhedra.
     friend Polyhedron intersection(const Polyhedron& p1, const Polyhedron& p2);
@@ -146,16 +139,15 @@ class Polyhedron
     //! \brief Write to an output stream.
     OutputStream& _write(OutputStream& os) const;
     //!@}
+
   private:
     Matrix<FloatDP> _A;
     Vector<FloatDP> _b;
 };
 
-
 inline OutputStream& operator<<(OutputStream& os, const Polyhedron& p) {
     return p._write(os);
 }
-
 
 } // namespace Ariadne
 

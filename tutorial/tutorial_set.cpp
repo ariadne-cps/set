@@ -28,31 +28,37 @@
 
 #include <iostream>
 #include <string>
-#include "ariadne-set.hpp"
-#include "geometry/point.hpp"
+
 #include "geometry/box.hpp"
+#include "geometry/point.hpp"
+
+#include "ariadne-set.hpp"
 using namespace Ariadne;
 using std::cout;
 namespace {
 void section(const std::string& title) { cout << "\n== " << title << " ==\n"; }
-template<class T> void show(const std::string& label,const T& value) { cout << label << ": " << value << "\n"; }
-}
+template<class T>
+void show(const std::string& label, const T& value) { cout << label << ": " << value << "\n"; }
+} // namespace
 int main() {
-    ExactBoxType workspace({{-2.0_x,2.0_x},{-1.5_x,1.5_x}});
-    ExactBoxType observation({{-0.75_x,1.25_x},{-0.5_x,1.0_x}});
+    ExactBoxType workspace({
+        {-2.0_x, 2.0_x},
+        {-1.5_x, 1.5_x}
+    });
+    ExactBoxType observation({
+        {-0.75_x, 1.25_x},
+        { -0.5_x,  1.0_x}
+    });
     section("Implicit regions: geometry defined by constraints");
 
     // Some sets are easier to describe by a condition than by a
     // parametrisation.  The following set is the unit disk, encoded as
     // 0 <= x^2+y^2 <= 1.  ConstraintSet represents the preimage itself.
     auto q = EffectiveScalarMultivariateFunction::coordinates(2);
-    EffectiveVectorMultivariateFunction radius_squared({
-        sqr(q[0]) + sqr(q[1])
-    });
+    EffectiveVectorMultivariateFunction radius_squared({sqr(q[0]) + sqr(q[1])});
     ConstraintSet unit_disk(
         radius_squared,
-        RealBox(1u, RealInterval(0, 1))
-    );
+        RealBox(1u, RealInterval(0, 1)));
 
     // Intersecting with a box turns an unbounded implicit description into
     // a bounded located set.  This makes bounding boxes and image operations
@@ -74,10 +80,8 @@ int main() {
     // parametrised geometric set.  This is a common pattern after solving a
     // feasibility problem: preserve the original admissible region, then map
     // it into the variables that are useful downstream.
-    EffectiveVectorMultivariateFunction shear({
-        q[0] + q[1] / 2,
-        q[1]
-    });
+    EffectiveVectorMultivariateFunction shear({q[0] + q[1] / 2,
+                                               q[1]});
     ConstrainedImageSet sheared_disk = image(bounded_disk, shear);
     show("sheared disk", sheared_disk);
     show("sheared disk bounding box", sheared_disk.bounding_box());
@@ -93,10 +97,8 @@ int main() {
     // keeps the parameter dependence, so later algorithms can subdivide,
     // propagate constraints and build validated approximations.
     auto u = ValidatedScalarMultivariateFunction::coordinates(2);
-    ValidatedVectorMultivariateFunction parametrisation({
-        u[0] + u[1],
-        u[0] * u[1]
-    });
+    ValidatedVectorMultivariateFunction parametrisation({u[0] + u[1],
+                                                         u[0] * u[1]});
     ExactBoxType parameter_domain = ExactBoxType::unit_box(2);
     ValidatedConstrainedImageSet image_set(parameter_domain, parametrisation);
 
@@ -162,8 +164,7 @@ int main() {
     // It is therefore a useful hand-off representation for downstream
     // geometry algorithms.
     ValidatedAffineConstrainedImageSet affine_set(
-        image_set.affine_over_approximation()
-    );
+        image_set.affine_over_approximation());
     show("affine over-approximation", affine_set);
     show("affine dimension", affine_set.dimension());
     show("affine is bounded", affine_set.is_bounded());
@@ -188,22 +189,27 @@ int main() {
     show("trajectory dimension", trajectory.dimension());
     show("trajectory bounding box", trajectory.bounding_box());
 
-
     section("ListSet: finite collections of basic sets");
     ListSet<ExactBoxType> pieces;
-    pieces.adjoin(ExactBoxType({{-1.0_x,0.0_x},{-1.0_x,0.0_x}}));
-    pieces.adjoin(ExactBoxType({{0.0_x,1.0_x},{0.0_x,1.0_x}}));
-    show("parts",pieces);
-    show("count",pieces.size());
-    show("bounding box",pieces.bounding_box());
+    pieces.adjoin(ExactBoxType({
+        {-1.0_x, 0.0_x},
+        {-1.0_x, 0.0_x}
+    }));
+    pieces.adjoin(ExactBoxType({
+        {0.0_x, 1.0_x},
+        {0.0_x, 1.0_x}
+    }));
+    show("parts", pieces);
+    show("count", pieces.size());
+    show("bounding box", pieces.bounding_box());
 
     section("Smooth curves from functions");
-    auto t=EffectiveScalarUnivariateFunction::coordinate();
-    Curve smooth(EffectiveVectorUnivariateFunction({t,t*t}));
-    FloatDP parameter(0.5_x,dp);
-    show("curve dimension",smooth.dimension());
-    show("curve value",smooth.value(parameter));
-    show("curve tangent",smooth.tangent(parameter));
+    auto t = EffectiveScalarUnivariateFunction::coordinate();
+    Curve smooth(EffectiveVectorUnivariateFunction({t, t * t}));
+    FloatDP parameter(0.5_x, dp);
+    show("curve dimension", smooth.dimension());
+    show("curve value", smooth.value(parameter));
+    show("curve tangent", smooth.tangent(parameter));
 
     cout << "\nSee tutorial_geometry for fundamentals and tutorial_paving for grids.\n";
     return 0;

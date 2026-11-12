@@ -29,27 +29,28 @@
 #ifndef ARIADNE_LIST_SET_HPP
 #define ARIADNE_LIST_SET_HPP
 
-
 #include <vector>
-#include "utility/stlio.hpp"
-#include "utility/macros.hpp"
-
 
 #include "geometry/box.hpp"
+#include "utility/macros.hpp"
+#include "utility/stlio.hpp"
 
 namespace Ariadne {
 
-template<class ES> class ListSet;
+template<class ES>
+class ListSet;
 
 /** @brief Summarize the number of constituent sets and their common dimension. */
-struct ListSetSummary { SizeType size; DimensionType dimension; };
+struct ListSetSummary {
+    SizeType size;
+    DimensionType dimension;
+};
 
 /*! \ingroup ListSetSubModule
  *  \brief A set described as the union of sets in a list of basic sets.
  */
 template<class BS>
-class ListSet
-{
+class ListSet {
   private:
     std::vector<BS> _data;
 
@@ -62,28 +63,32 @@ class ListSet
     virtual ~ListSet() = default;
 
     /** @brief Construct an empty list set. */
-    ListSet() { };
+    ListSet() {};
     /** @brief Construct an empty list set with a dimension hint. */
-    explicit ListSet(DimensionType) { };
+    explicit ListSet(DimensionType) {};
     /** @brief Construct a list set containing one basic set. */
     explicit ListSet(const BS& bs) { this->adjoin(bs); }
     /** @brief Construct a list set from another list set's elements. */
-    template<class BST> ListSet(const ListSet<BST>& ls) {
-        this->_data.insert(this->end(),ls.begin(),ls.end()); }
+    template<class BST>
+    ListSet(const ListSet<BST>& ls) {
+        this->_data.insert(this->end(), ls.begin(), ls.end());
+    }
     /** @brief Construct a list set from a standard vector. */
     ListSet(const std::vector<BS>& lst) {
-        this->_data.insert(this->end(),lst.begin(),lst.end()); }
+        this->_data.insert(this->end(), lst.begin(), lst.end());
+    }
     /** @brief Construct a list set from an iterator range. */
-    template<class Iter> ListSet(Iter first, Iter last) {
-        this->_data.insert(this->end(),first,last); }
+    template<class Iter>
+    ListSet(Iter first, Iter last) {
+        this->_data.insert(this->end(), first, last);
+    }
 
     /** @brief Allocate a copy of this list set. */
     ListSet<BS>* clone() const { return new ListSet<BS>(*this); }
 
     /*! \brief Tests if the sets are equal. Tests equality of sequences,
      *  including ordering. */
-    Bool operator==(const ListSet<BS>& other) const { return this->_data==other._data; }
-
+    Bool operator==(const ListSet<BS>& other) const { return this->_data == other._data; }
 
     /*! \brief Returns true if the list is empty. */
     Bool empty() const { return this->_data.empty(); }
@@ -113,10 +118,20 @@ class ListSet
     Iterator end() { return this->_data.end(); };
 
     /*! \brief Returns the denotable set's space dimension. */
-    DimensionType dimension() const { if(this->empty()) { return 0; } else { return this->_data.back().dimension(); } }
+    DimensionType dimension() const {
+        if (this->empty()) {
+            return 0;
+        } else {
+            return this->_data.back().dimension();
+        }
+    }
 
     /*! \brief Removes a set from the list and return it. */
-    BS pop() { BS result=this->_data.back(); this->_data.pop_back(); return result; }
+    BS pop() {
+        BS result = this->_data.back();
+        this->_data.pop_back();
+        return result;
+    }
 
     /*! \brief Removes a set given identified by an Iterator from the list. */
     Iterator erase(Iterator iter) { return this->_data.erase(iter); }
@@ -126,18 +141,20 @@ class ListSet
 
     /*! \brief Adjoins (makes union with) a basic set. */
     Void adjoin(const BS& bs) {
-        ARIADNE_PRECONDITION(this->empty() || this->_data.back().dimension()==bs.dimension());
-        this->_data.push_back(bs); }
+        ARIADNE_PRECONDITION(this->empty() || this->_data.back().dimension() == bs.dimension());
+        this->_data.push_back(bs);
+    }
 
     /*! \brief Adjoins (makes union with) another list set. */
     Void adjoin(const ListSet<BS>& ls) {
-        ARIADNE_PRECONDITION(this->empty() || ls.empty() || this->_data.back().dimension()==ls._data.back().dimension());
-        this->_data.insert(this->_data.end(),ls.begin(),ls.end()); }
+        ARIADNE_PRECONDITION(this->empty() || ls.empty() || this->_data.back().dimension() == ls._data.back().dimension());
+        this->_data.insert(this->_data.end(), ls.begin(), ls.end());
+    }
 
     /*! \brief compute a list of the bounding boxes of the set elements. */
     ListSet<UpperBoxType> bounding_boxes() const {
         ListSet<UpperBoxType> result(this->dimension());
-        for(SizeType i=0; i!=this->size(); ++i) {
+        for (SizeType i = 0; i != this->size(); ++i) {
             result.adjoin((*this)[i].bounding_box());
         }
         return result;
@@ -145,10 +162,13 @@ class ListSet
 
     /*! \brief A bounding box for the whole set. */
     UpperBoxType bounding_box() const {
-        if(this->size()==0) { return UpperBoxType(this->dimension()); }
+        if (this->size() == 0) {
+            return UpperBoxType(this->dimension());
+        }
         UpperBoxType result((*this)[0].bounding_box());
-        for(SizeType i=1; i!=this->size(); ++i) {
-            result=hull(result,(*this)[i].bounding_box()); }
+        for (SizeType i = 1; i != this->size(); ++i) {
+            result = hull(result, (*this)[i].bounding_box());
+        }
         return result;
     }
 
@@ -158,23 +178,27 @@ class ListSet
     }
 
     /*! \brief Returns a summary of the size and dimension. */
-    ListSetSummary summary() const { ListSetSummary summary = { this->size(),this->dimension() }; return summary; }
-
+    ListSetSummary summary() const {
+        ListSetSummary summary = {this->size(), this->dimension()};
+        return summary;
+    }
 };
 
 inline OutputStream& operator<<(OutputStream& os, const ListSetSummary& lss) {
-    return os << "ListSet( s="<<lss.size<<", d="<<lss.dimension<<")"; }
+    return os << "ListSet( s=" << lss.size << ", d=" << lss.dimension << ")";
+}
 
 template<class BS>
 OutputStream&
-operator<<(OutputStream& os, const ListSet<BS>& ls)
-{
+    operator<<(OutputStream& os, const ListSet<BS>& ls) {
     os << "ListSet(";
-    if(!ls.empty()) { for(SizeType i=0; i!=ls.size(); ++i) { os << (i==0?" ":", ") << ls[i]; } }
+    if (!ls.empty()) {
+        for (SizeType i = 0; i != ls.size(); ++i) {
+            os << (i == 0 ? " " : ", ") << ls[i];
+        }
+    }
     return os << " )";
 }
-
-
 
 } // namespace Ariadne
 
