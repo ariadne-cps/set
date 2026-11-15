@@ -30,6 +30,7 @@
 #include <sstream>
 
 #include "function/taylor_function.hpp"
+#include "logging/test_runner.hpp"
 #include "set/affine_set.hpp"
 #include "set/function_set.hpp"
 
@@ -316,5 +317,5 @@ int main(int argc, char** argv) {
     ARIADNE_TESTING_ADD_TEST(TestValidatedConstrainedImageSetSuite, test_default_image_sets);
     ARIADNE_TESTING_ADD_TEST(TestValidatedConstrainedImageSetSuite, test_validated_image_operations);
     ARIADNE_TESTING_ADD_TEST(TestValidatedConstrainedImageSetSuite, test_one_sided_satisfaction);
-    return ARIADNE_TESTING_RUN_TESTS_WITH_ARGS(argc, argv);
+    return Ariadne::Testing::run_logging_suite(ariadne_test_suite, argc, argv);
 }

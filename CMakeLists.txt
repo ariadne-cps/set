@@ -27,5 +27,8 @@ require_same_dependency_commit(Build CHAINS
 require_same_dependency_commit(Algebra CHAINS
     "linear-programming|algebra"
     "constraint-solving|nonlinear-programming|function|geometry|algebra")
+require_same_dependency_commit(Logging CHAINS
+    "linear-programming|logging"
+    "constraint-solving|nonlinear-programming|logging")
 
 ariadne_setup_module(set)

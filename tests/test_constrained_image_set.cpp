@@ -34,6 +34,7 @@
 #include "function/function.hpp"
 #include "function/taylor_model.hpp"
 #include "geometry/box.hpp"
+#include "logging/test_runner.hpp"
 #include "set/affine_set.hpp"
 #include "set/function_set.hpp"
 
@@ -318,5 +319,5 @@ int main(int argc, char** argv) {
     ARIADNE_TESTING_ADD_TEST(TestConstrainedImageSet, test_affine_approximation);
     ARIADNE_TESTING_ADD_TEST(TestValidatedConstrainedImageSet, test_construct);
     ::Ariadne::Testing::add_fixture_test<TestValidatedConstrainedImageSet, &TestValidatedConstrainedImageSet::test_geometry>(ariadne_test_suite, "validated_geometry");
-    return ARIADNE_TESTING_RUN_TESTS_WITH_ARGS(argc, argv);
+    return Ariadne::Testing::run_logging_suite(ariadne_test_suite, argc, argv);
 }

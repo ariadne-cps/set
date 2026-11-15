@@ -29,6 +29,7 @@
 #include "algebra/matrix.hpp"
 #include "algebra/sweeper.hpp"
 #include "function/taylor_function.hpp"
+#include "logging/test_runner.hpp"
 #include "set/function_set.hpp"
 
 #include "ariadne-testing.hpp"
@@ -131,5 +132,5 @@ int main(int argc, char** argv) {
     ARIADNE_TESTING_ADD_TEST(TestFunctionSetSensitivity, test_nonlinearity_dominant_coordinate);
     ARIADNE_TESTING_ADD_TEST(TestFunctionSetSensitivity, test_nonlinearity_ignores_smaller_rows);
     ARIADNE_TESTING_ADD_TEST(TestFunctionSetSensitivity, test_lipschitz_dominant_coordinate);
-    return ARIADNE_TESTING_RUN_TESTS_WITH_ARGS(argc, argv);
+    return Ariadne::Testing::run_logging_suite(ariadne_test_suite, argc, argv);
 }

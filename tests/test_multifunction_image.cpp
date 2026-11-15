@@ -30,6 +30,7 @@
 // construction or evaluation assertions. Concrete image types belong to set.
 #include "algebra/sweeper.hpp"
 #include "function/taylor_function.hpp"
+#include "logging/test_runner.hpp"
 #include "set/multifunction_image.hpp"
 
 #include "ariadne-testing.hpp"
@@ -92,5 +93,5 @@ class TestMultifunctionImage : public Ariadne::Testing::ContextFixture {
 int main(int argc, char** argv) {
     ARIADNE_TESTING_SUITE("test_multifunction_image");
     ARIADNE_TESTING_ADD_TEST(TestMultifunctionImage, test_multifunction_image);
-    return ARIADNE_TESTING_RUN_TESTS_WITH_ARGS(argc, argv);
+    return Ariadne::Testing::run_logging_suite(ariadne_test_suite, argc, argv);
 }
