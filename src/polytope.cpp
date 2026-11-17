@@ -78,24 +78,47 @@ void Polytope::reduce2d() {
     if (_dimension != 2u) {
         throw std::invalid_argument("Polytope::reduce2d requires dimension two");
     }
-    std::sort(_vertices.begin(), _vertices.end(), lexicographic_less_2d);
-    _vertices.erase(std::unique(_vertices.begin(), _vertices.end(), same_point_2d), _vertices.end());
-    if (_vertices.size() <= 2u) return;
+
+    // Sort references, not Point objects. Moving Point<Rational> instances
+    // during sorting can leave a generator with an empty coordinate array.
+    // The original generators remain unchanged until the new hull is ready.
+    std::vector<const VertexType*> ordered;
+    ordered.reserve(_vertices.size());
+    for (const auto& point: _vertices) {
+        if (point.dimension() != 2u) {
+            throw std::logic_error("Polytope contains a generator with invalid dimension");
+        }
+        ordered.push_back(&point);
+    }
+    std::sort(ordered.begin(), ordered.end(),
+              [](const VertexType* lhs, const VertexType* rhs) {
+                  return lexicographic_less_2d(*lhs, *rhs);
+              });
+    ordered.erase(std::unique(ordered.begin(), ordered.end(),
+                              [](const VertexType* lhs, const VertexType* rhs) {
+                                  return same_point_2d(*lhs, *rhs);
+                              }),
+                  ordered.end());
 
     std::vector<VertexType> hull;
-    hull.reserve(2u * _vertices.size());
-    const Rational zero(0);
+    hull.reserve(ordered.size());
+    if (ordered.size() <= 2u) {
+        for (const auto* point: ordered) hull.push_back(*point);
+        _vertices.swap(hull);
+        return;
+    }
 
-    for (const auto& point: _vertices) {
+    const Rational zero(0);
+    for (const auto* point: ordered) {
         while (hull.size() >= 2u &&
-               oriented_area_twice(hull[hull.size()-2u], hull.back(), point) <= zero) {
+               oriented_area_twice(hull[hull.size()-2u], hull.back(), *point) <= zero) {
             hull.pop_back();
         }
-        hull.push_back(point);
+        hull.push_back(*point);
     }
     const SizeType lower_size = hull.size();
-    for (SizeType i = _vertices.size() - 1u; i != 0u; --i) {
-        const auto& point = _vertices[i-1u];
+    for (SizeType i = ordered.size() - 1u; i != 0u; --i) {
+        const auto& point = *ordered[i-1u];
         while (hull.size() > lower_size &&
                oriented_area_twice(hull[hull.size()-2u], hull.back(), point) <= zero) {
             hull.pop_back();
