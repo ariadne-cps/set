@@ -90,6 +90,11 @@ class TestPolytope : public Ariadne::Testing::ContextFixture {
         ARIADNE_TESTING_PROVE(has_vertex(p, make_point({0, 2})));
         ARIADNE_TESTING_EXPECT_EQUAL(p.vertex(0u)[0], Rational(0));
         ARIADNE_TESTING_EXPECT_EQUAL(p.vertex(0u)[1], Rational(0));
+        // Repeating reduction must preserve the vertices and their coordinates.
+        p.reduce2d();
+        ARIADNE_TESTING_EXPECT_EQUAL(p.number_of_vertices(), 4u);
+        ARIADNE_TESTING_PROVE(has_vertex(p, make_point({0, 0})));
+        ARIADNE_TESTING_PROVE(has_vertex(p, make_point({2, 2})));
     }
 
     Void test_degenerate_2d() {

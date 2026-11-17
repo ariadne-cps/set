@@ -79,54 +79,61 @@ void Polytope::reduce2d() {
         throw std::invalid_argument("Polytope::reduce2d requires dimension two");
     }
 
-    // Sort references, not Point objects. Moving Point<Rational> instances
-    // during sorting can leave a generator with an empty coordinate array.
-    // The original generators remain unchanged until the new hull is ready.
-    std::vector<const VertexType*> ordered;
-    ordered.reserve(_vertices.size());
-    for (const auto& point: _vertices) {
-        if (point.dimension() != 2u) {
+    // Keep all original points immutable throughout the hull computation.
+    // Sorting and maintaining indices avoids moving or assigning RationalPoint
+    // instances while they may still be used by geometric predicates.
+    std::vector<SizeType> order;
+    order.reserve(_vertices.size());
+    for (SizeType i = 0u; i != _vertices.size(); ++i) {
+        if (_vertices[i].dimension() != 2u) {
             throw std::logic_error("Polytope contains a generator with invalid dimension");
         }
-        ordered.push_back(&point);
+        order.push_back(i);
     }
-    std::sort(ordered.begin(), ordered.end(),
-              [](const VertexType* lhs, const VertexType* rhs) {
-                  return lexicographic_less_2d(*lhs, *rhs);
+    std::sort(order.begin(), order.end(),
+              [this](SizeType lhs, SizeType rhs) {
+                  return lexicographic_less_2d(_vertices[lhs], _vertices[rhs]);
               });
-    ordered.erase(std::unique(ordered.begin(), ordered.end(),
-                              [](const VertexType* lhs, const VertexType* rhs) {
-                                  return same_point_2d(*lhs, *rhs);
-                              }),
-                  ordered.end());
+    order.erase(std::unique(order.begin(), order.end(),
+                            [this](SizeType lhs, SizeType rhs) {
+                                return same_point_2d(_vertices[lhs], _vertices[rhs]);
+                            }),
+                order.end());
 
-    std::vector<VertexType> hull;
-    hull.reserve(ordered.size());
-    if (ordered.size() <= 2u) {
-        for (const auto* point: ordered) hull.push_back(*point);
-        _vertices.swap(hull);
-        return;
-    }
-
+    // The hull holds indices only. In particular, no point is modified by
+    // either pass of the monotone-chain convex hull algorithm.
+    std::vector<SizeType> hull;
+    hull.reserve(2u * order.size());
     const Rational zero(0);
-    for (const auto* point: ordered) {
+
+    for (const auto index: order) {
         while (hull.size() >= 2u &&
-               oriented_area_twice(hull[hull.size()-2u], hull.back(), *point) <= zero) {
+               oriented_area_twice(_vertices[hull[hull.size()-2u]],
+                                   _vertices[hull.back()], _vertices[index]) <= zero) {
             hull.pop_back();
         }
-        hull.push_back(*point);
+        hull.push_back(index);
     }
     const SizeType lower_size = hull.size();
-    for (SizeType i = ordered.size() - 1u; i != 0u; --i) {
-        const auto& point = *ordered[i-1u];
-        while (hull.size() > lower_size &&
-               oriented_area_twice(hull[hull.size()-2u], hull.back(), point) <= zero) {
-            hull.pop_back();
+    if (order.size() > 1u) {
+        for (SizeType i = order.size() - 1u; i != 0u; --i) {
+            const SizeType index = order[i-1u];
+            while (hull.size() > lower_size &&
+                   oriented_area_twice(_vertices[hull[hull.size()-2u]],
+                                       _vertices[hull.back()], _vertices[index]) <= zero) {
+                hull.pop_back();
+            }
+            hull.push_back(index);
         }
-        hull.push_back(point);
+        hull.pop_back(); // Remove the repeated first vertex.
     }
-    hull.pop_back();
-    _vertices.swap(hull);
+
+    std::vector<VertexType> reduced;
+    reduced.reserve(hull.size());
+    for (const SizeType index: hull) {
+        reduced.push_back(_vertices[index]);
+    }
+    _vertices.swap(reduced);
 }
 
 Polytope convex_hull(const Polytope& p1, const Polytope& p2) {
