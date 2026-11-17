@@ -2,6 +2,7 @@
  *            src/polytope.cpp
  *
  *  Copyright  2007-20  Alberto Casagrande, Pieter Collins
+ *  Copyright  2026     Luca Geretti
  *
  ****************************************************************************/
 
@@ -23,167 +24,125 @@
  */
 
 /** @file src/polytope.cpp
- *  @brief Implement polytope construction and geometric operations.
+ *  @brief Exact vertex-hull operations and two-dimensional projection.
  */
 
 #include "set/polytope.hpp"
 
-#include "algebra/matrix.hpp"
+#include <algorithm>
+#include <stdexcept>
+#include <vector>
+
 #include "algebra/vector.hpp"
-#include "function/function.hpp"
-#include "function/functional.hpp"
-#include "geometry/box.hpp"
-#include "geometry/point.hpp"
-#include "set/curve.hpp"
-#include "set/zonotope.hpp"
-#include "utility/stlio.hpp"
 
 namespace Ariadne {
+namespace {
 
-ValidatedKleenean
-    Polytope::separated(const ExactBoxType& bx) const {
-    return this->bounding_box().separated(bx) || indeterminate;
+bool lexicographic_less_2d(const RationalPoint& lhs, const RationalPoint& rhs) {
+    if (lhs[0] < rhs[0]) return true;
+    if (rhs[0] < lhs[0]) return false;
+    return lhs[1] < rhs[1];
 }
 
-ValidatedKleenean
-    Polytope::overlaps(const ExactBoxType& bx) const {
-    return bx.covers(baricentre(*this)) || indeterminate;
+bool same_point_2d(const RationalPoint& lhs, const RationalPoint& rhs) {
+    return lhs[0] == rhs[0] && lhs[1] == rhs[1];
 }
 
-ValidatedKleenean
-    Polytope::inside(const ExactBoxType& bx) const {
-    return this->bounding_box().inside(bx) || indeterminate;
+Rational oriented_area_twice(const RationalPoint& a,
+                            const RationalPoint& b,
+                            const RationalPoint& c) {
+    return (b[0] - a[0]) * (c[1] - a[1]) -
+           (b[1] - a[1]) * (c[0] - a[0]);
 }
 
-ExactBoxType
-    Polytope::bounding_box() const {
-    const Polytope& p = *this;
-    ExactBoxType res(p._vertices[0]);
-    for (SizeType i = 1; i != p._vertices.size(); ++i) {
-        res = hull(res, p._vertices[i]);
+} // namespace
+
+Polytope::Polytope(DimensionType dimension)
+    : _dimension(dimension) {}
+
+Polytope::Polytope(DimensionType dimension, const std::vector<VertexType>& points)
+    : _dimension(dimension) {
+    for (const auto& point: points) {
+        this->new_vertex(point);
     }
-    return res;
 }
 
-OutputStream&
-    Polytope::_write(OutputStream& os) const {
-    return os << "Polytope( vertices=" << this->vertices() << " )";
+void Polytope::new_vertex(const VertexType& point) {
+    if (point.dimension() != _dimension) {
+        throw std::invalid_argument("Polytope generator dimension does not match ambient dimension");
+    }
+    _vertices.push_back(point);
 }
 
-FloatDP
-    slope2d(const ExactPoint& pt1, const ExactPoint& pt2) {
-    ARIADNE_ASSERT(pt1.dimension() == 2 && pt2.dimension() == 2);
-    return (pt2[1] - pt1[1]) / (pt2[0] - pt1[0]);
-}
+void Polytope::reduce2d() {
+    if (_dimension != 2u) {
+        throw std::invalid_argument("Polytope::reduce2d requires dimension two");
+    }
+    std::sort(_vertices.begin(), _vertices.end(), lexicographic_less_2d);
+    _vertices.erase(std::unique(_vertices.begin(), _vertices.end(), same_point_2d), _vertices.end());
+    if (_vertices.size() <= 2u) return;
 
-Polytope polytope(const ExactBoxType& bx) {
-    return Polytope(bx.vertices());
-}
+    std::vector<VertexType> hull;
+    hull.reserve(2u * _vertices.size());
+    const Rational zero(0);
 
-Polytope polytope(const Zonotope& z) {
-    // std::cerr<<ARIADNE_PRETTY_FUNCTION<<std::endl;
-    Polytope res;
-    SizeType ng = z.generators().column_size();
-    SizeType nv = 1 << ng;
-    for (SizeType i = 0; i != nv; ++i) {
-        ExactPoint pt = z.centre();
-        for (SizeType j = 0; j != ng; ++j) {
-            if (i & 1 << j) {
-                pt += column(z.generators(), j);
-            } else {
-                pt -= column(z.generators(), j);
-            }
+    for (const auto& point: _vertices) {
+        while (hull.size() >= 2u &&
+               oriented_area_twice(hull[hull.size()-2u], hull.back(), point) <= zero) {
+            hull.pop_back();
         }
-        res.new_vertex(pt);
+        hull.push_back(point);
     }
-    if (res.dimension() == 2) {
-        return reduce2d(res);
-    } else {
-        return res;
+    const SizeType lower_size = hull.size();
+    for (SizeType i = _vertices.size() - 1u; i != 0u; --i) {
+        const auto& point = _vertices[i-1u];
+        while (hull.size() > lower_size &&
+               oriented_area_twice(hull[hull.size()-2u], hull.back(), point) <= zero) {
+            hull.pop_back();
+        }
+        hull.push_back(point);
     }
+    hull.pop_back();
+    _vertices.swap(hull);
 }
 
-Polytope polytope(const Polytope& p) {
-    Polytope r = p;
-    if (r.dimension() == 2) {
-        return reduce2d(r);
-    } else {
-        return r;
+Polytope convex_hull(const Polytope& p1, const Polytope& p2) {
+    if (p1.dimension() != p2.dimension()) {
+        throw std::invalid_argument("Convex hull requires matching ambient dimensions");
     }
+    Polytope result(p1.dimension());
+    for (const auto& point: p1.vertices()) result.new_vertex(point);
+    for (const auto& point: p2.vertices()) result.new_vertex(point);
+    if (result.dimension() == 2u) result.reduce2d();
+    return result;
 }
 
-Polytope& reduce2d(Polytope& p) {
-    ARIADNE_ASSERT(p.dimension() == 2);
-    // std::cerr << this->_vertices << std::endl;
-    std::sort(p.vertices().begin(), p.vertices().end());
-    // std::cerr << this->_vertices << std::endl;
-
-    const std::vector<ExactPoint>& old_vertices = p.vertices();
-    std::vector<ExactPoint> new_vertices;
-
-    // Sweep lower boundary from bottom-left to top right
-    SizeType min_size = 1;
-    for (std::vector<ExactPoint>::ConstIterator vertex_iter = old_vertices.begin();
-         vertex_iter != old_vertices.end(); ++vertex_iter) {
-        const ExactPoint& vertex = *vertex_iter;
-        while (new_vertices.size() > min_size) {
-            const ExactPoint& penultimate = new_vertices[new_vertices.size() - 2];
-            const ExactPoint& last = new_vertices[new_vertices.size() - 1];
-            if (penultimate[0] == last[0]) {
-                new_vertices.pop_back();
-            } else if (last[0] == vertex[0]) {
-                break;
-            } else if (slope2d(penultimate, vertex) <= slope2d(penultimate, last)) {
-                new_vertices.pop_back();
-            } else {
-                break;
-            }
-        }
-        new_vertices.push_back(vertex);
+Polytope project2d(const Polytope& p, SizeType xind, SizeType yind) {
+    if (xind >= p.dimension() || yind >= p.dimension() || xind == yind) {
+        throw std::invalid_argument("Invalid or repeated projection coordinates for Polytope");
     }
-    new_vertices.pop_back();
-
-    // UpperTag sweep
-    // std::cerr << "Forward pass\n";
-    min_size = new_vertices.size() + 1;
-    for (std::vector<ExactPoint>::const_reverse_iterator vertex_iter = old_vertices.rbegin();
-         vertex_iter != old_vertices.rend(); ++vertex_iter) {
-        const ExactPoint& vertex = *vertex_iter;
-        while (new_vertices.size() > min_size) {
-            const ExactPoint& penultimate = new_vertices[new_vertices.size() - 2];
-            const ExactPoint& last = new_vertices[new_vertices.size() - 1];
-            if (penultimate[0] == last[0]) {
-                new_vertices.pop_back();
-            } else if (last[0] == vertex[0]) {
-                break;
-            } else if (slope2d(penultimate, vertex) <= slope2d(penultimate, last)) {
-                new_vertices.pop_back();
-            } else {
-                break;
-            }
-        }
-        new_vertices.push_back(vertex);
+    Polytope result(2u);
+    for (const auto& point: p.vertices()) {
+        Vector<Rational> xy(2u, Rational(0));
+        xy[0] = point[xind];
+        xy[1] = point[yind];
+        result.new_vertex(RationalPoint(xy));
     }
-    new_vertices.pop_back();
-
-    new_vertices.swap(p.vertices());
-    return p;
+    result.reduce2d();
+    return result;
 }
 
-ExactPoint
-    baricentre(const Polytope& p) {
-    const std::vector<ExactPoint>& vertices = p.vertices();
-    ExactPoint baricentre(p.dimension());
-
-    for (SizeType j = 0; j != vertices.size(); ++j) {
-        for (SizeType i = 0; i < 2; i++) {
-            baricentre[i] = baricentre[i] + vertices[j][i];
-        }
+RationalPoint mean_of_generators(const Polytope& p) {
+    if (p.empty()) {
+        throw std::invalid_argument("Cannot compute mean of an empty polytope's generators");
     }
-    for (SizeType i = 0; i != 2; ++i) {
-        baricentre[i] /= vertices.size();
+    Vector<Rational> sum(p.dimension(), Rational(0));
+    for (const auto& point: p.vertices()) {
+        for (SizeType i = 0u; i != p.dimension(); ++i) sum[i] += point[i];
     }
-    return baricentre;
+    const Rational count(p.number_of_vertices());
+    for (SizeType i = 0u; i != p.dimension(); ++i) sum[i] /= count;
+    return RationalPoint(sum);
 }
 
 } // namespace Ariadne

@@ -8,6 +8,7 @@ set(UNIT_TESTS
     test_curve
     test_list_set
     test_multifunction_image
+    test_polytope
 )
 foreach(TEST IN LISTS UNIT_TESTS)
     add_executable(${TEST} ${TEST}.cpp)

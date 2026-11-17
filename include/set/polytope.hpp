@@ -2,6 +2,7 @@
  *            set/polytope.hpp
  *
  *  Copyright  2005-20  Alberto Casagrande, Pieter Collins
+ *  Copyright  2026     Luca Geretti
  *
  ****************************************************************************/
 
@@ -23,98 +24,83 @@
  */
 
 /** @file set/polytope.hpp
- *  @brief Polytopes and convex hull geometry.
+ *  @brief Exact vertex-represented polytopes and two-dimensional projections.
  */
 
 #ifndef ARIADNE_POLYTOPE_HPP
 #define ARIADNE_POLYTOPE_HPP
 
-/*! \file set/polytope.hpp
- *  \brief Polytope class for geometry output.
- */
-
-#include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <cstring>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
+#include <vector>
 
 #include "geometry/point.hpp"
-#include "geometry/set_interface.hpp"
-#include "utility/macros.hpp"
+#include "numeric/rational.hpp"
+#include "utility/typedefs.hpp"
 
 namespace Ariadne {
 
-class Zonotope;
-class Polytope;
-class InterpolatedCurve;
-
-Polytope polytope(const ExactBoxType& bx);
-Polytope polytope(const Zonotope& z);
-Polytope polytope(const Polytope& p);
-
-ExactPoint baricentre(const Polytope& p);
-
-Polytope& reduce2d(Polytope& p);
-FloatDP slope2d(const ExactPoint& pt1, const ExactPoint& pt2);
-
-//! A polytope in Euclidean space, defined by a list of extreme points.
-class Polytope
-    : public LocatedSetInterface
-
-{
+/** @brief A bounded convex polytope represented by the convex hull of exact rational points.
+ *
+ *  The ambient dimension is retained even when no vertices are present. In
+ *  dimensions greater than two, the stored points need not be extreme; no
+ *  general vertex/facet conversion or arbitrary-dimensional hull reduction is
+ *  implied by this representation.
+ */
+class Polytope {
   public:
-    typedef std::vector<ExactPoint>::const_iterator ConstIterator;
+    using VertexType = RationalPoint;
+    using ConstIterator = std::vector<VertexType>::const_iterator;
 
-    //! \brief Default constructor constructs an empty polytope in zero dimensions.
-    Polytope() {}
-    //! \brief Construct an empty polytope in \a d dimensions.
-    Polytope(DimensionType) {}
-    //! \brief Construct polytope with vertices in \a v.
-    Polytope(const std::vector<ExactPoint>& v) : _vertices(v) {}
+    /** @brief Construct the empty zero-dimensional polytope. */
+    Polytope() = default;
+    /** @brief Construct an empty polytope with specified ambient dimension. */
+    explicit Polytope(DimensionType dimension);
+    /** @brief Construct the convex hull of the supplied points in a specified ambient dimension. */
+    Polytope(DimensionType dimension, const std::vector<VertexType>& points);
 
-    //! \brief Add a new vertex \a v to the current vertices.
-    Void new_vertex(const ExactPoint& v) {
-        ARIADNE_ASSERT(this->_vertices.size() == 0 || v.dimension() == this->_vertices.front().dimension());
-        this->_vertices.push_back(v);
-    }
-    //! \brief The number of points defining the polytope. Note that an interior point is counted by this method.
-    SizeType number_of_vertices() const { return this->_vertices.size(); }
-    //! \brief The \a i<sup>th</sup> vertex.
-    const ExactPoint& vertex(SizeType i) const { return this->_vertices[i]; }
-    const std::vector<ExactPoint>& vertices() const { return this->_vertices; }
-    std::vector<ExactPoint>& vertices() { return this->_vertices; }
-    //! \brief A constant Iterator pointing to the first vertex.
-    ConstIterator vertices_begin() const { return this->_vertices.begin(); }
-    //! \brief A constant Iterator pointing to the past-the-end vertex.
-    ConstIterator vertices_end() const { return this->_vertices.end(); }
-    //! \brief Reduce the description of the polytope by removing all non-extreme points from the list of vertices. (Not currently implemented)
-    Void reduce() { ARIADNE_NOT_IMPLEMENTED; }
+    /** @brief Return the ambient dimension, including for empty polytopes. */
+    DimensionType dimension() const { return _dimension; }
+    /** @brief Return true if the generating set has no points. */
+    bool empty() const { return _vertices.empty(); }
+    /** @brief Return the number of stored generating points; some may be non-extreme. */
+    SizeType number_of_vertices() const { return _vertices.size(); }
+    /** @brief Return the selected generating point. */
+    const VertexType& vertex(SizeType i) const { return _vertices.at(i); }
+    /** @brief Return the stored generating points. */
+    const std::vector<VertexType>& vertices() const { return _vertices; }
+    /** @brief Return the first generating point. */
+    ConstIterator vertices_begin() const { return _vertices.begin(); }
+    /** @brief Return the one-past-the-last generating point. */
+    ConstIterator vertices_end() const { return _vertices.end(); }
 
-    virtual Polytope* clone() const { return new Polytope(*this); }
-    virtual DimensionType dimension() const {
-        if (this->_vertices.size() == 0) {
-            return 0;
-        }
-        return this->_vertices.front().dimension();
-    }
-    virtual ValidatedKleenean separated(const ExactBoxType& bx) const;
-    virtual ValidatedKleenean overlaps(const ExactBoxType& bx) const;
-    virtual ValidatedKleenean inside(const ExactBoxType& bx) const;
-    virtual UpperBoxType bounding_box() const;
-    virtual OutputStream& _write(OutputStream& os) const;
-
-    //! \brief The convex hull of two polytopes.
-    friend Polytope convex_hull(const Polytope& p1, const Polytope& p2);
-    //! \brief The baricentre of a polytope.
-    friend ExactPoint baricentre(const Polytope& p);
+    /** @brief Adjoin a point to the generating set, preserving ambient dimension. */
+    void new_vertex(const VertexType& point);
+    /** @brief Remove non-extreme and duplicate generators in 2D using exact predicates.
+     *
+     *  Throws for dimensions other than two. Correctly handles the empty,
+     *  singleton and collinear cases without constructing an artificial area.
+     */
+    void reduce2d();
 
   private:
-    std::vector<ExactPoint> _vertices;
+    DimensionType _dimension = 0u;
+    std::vector<VertexType> _vertices;
 };
-inline OutputStream& operator<<(OutputStream& os, const Polytope& p) { return p._write(os); }
+
+/** @brief Convex hull of two vertex-represented polytopes of the same ambient dimension. */
+Polytope convex_hull(const Polytope& p1, const Polytope& p2);
+
+/** @brief Exact convex hull of a coordinate projection, without an N-dimensional hull computation.
+ *
+ *  The two coordinates must be distinct and valid even if the polytope is
+ *  empty. This operation is geometric, not a drawing operation.
+ */
+Polytope project2d(const Polytope& p, SizeType xind, SizeType yind);
+
+/** @brief Arithmetic mean of the stored generators, not the polytope's volume centroid.
+ *
+ *  Throws if the polytope has no generators.
+ */
+RationalPoint mean_of_generators(const Polytope& p);
 
 } // namespace Ariadne
 
