@@ -107,9 +107,11 @@ void Polytope::reduce2d() {
     const Rational zero(0);
 
     for (const auto index: order) {
-        while (hull.size() >= 2u &&
-               oriented_area_twice(_vertices[hull[hull.size()-2u]],
-                                   _vertices[hull.back()], _vertices[index]) <= zero) {
+        // Keep the size guard separate: Rational comparisons return Ariadne
+        // Boolean, whose overloaded conjunction does not short-circuit.
+        while (hull.size() >= 2u) {
+            if (oriented_area_twice(_vertices[hull[hull.size()-2u]],
+                                    _vertices[hull.back()], _vertices[index]) > zero) break;
             hull.pop_back();
         }
         hull.push_back(index);
@@ -118,9 +120,9 @@ void Polytope::reduce2d() {
     if (order.size() > 1u) {
         for (SizeType i = order.size() - 1u; i != 0u; --i) {
             const SizeType index = order[i-1u];
-            while (hull.size() > lower_size &&
-                   oriented_area_twice(_vertices[hull[hull.size()-2u]],
-                                       _vertices[hull.back()], _vertices[index]) <= zero) {
+            while (hull.size() > lower_size) {
+                if (oriented_area_twice(_vertices[hull[hull.size()-2u]],
+                                        _vertices[hull.back()], _vertices[index]) > zero) break;
                 hull.pop_back();
             }
             hull.push_back(index);

@@ -101,6 +101,19 @@ class TestPolytope : public Ariadne::Testing::ContextFixture {
         Polytope empty(2u);
         empty.reduce2d();
         ARIADNE_TESTING_PROVE(empty.empty());
+        Polytope singleton(2u, {make_point({4, 7}), make_point({4, 7})});
+        singleton.reduce2d();
+        ARIADNE_TESTING_EXPECT_EQUAL(singleton.number_of_vertices(), 1u);
+        ARIADNE_TESTING_PROVE(has_vertex(singleton, make_point({4, 7})));
+        singleton.reduce2d();
+        ARIADNE_TESTING_EXPECT_EQUAL(singleton.number_of_vertices(), 1u);
+
+        Polytope pair(2u, {make_point({3, 4}), make_point({0, 1})});
+        pair.reduce2d();
+        ARIADNE_TESTING_EXPECT_EQUAL(pair.number_of_vertices(), 2u);
+        ARIADNE_TESTING_PROVE(has_vertex(pair, make_point({3, 4})));
+        ARIADNE_TESTING_PROVE(has_vertex(pair, make_point({0, 1})));
+
         Polytope segment(2u, {
             make_point({3, 3}), make_point({0, 0}),
             make_point({2, 2}), make_point({1, 1}), make_point({3, 3})
