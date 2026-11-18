@@ -50,8 +50,10 @@ bool contains_vertex(const OuterPolygon2d& outer,
                      const Rational& x, const Rational& y) {
     const auto& vertices = outer.vertices();
     if (vertices.empty()) return false;
-    if (vertices.size() == 1u)
-        return vertices[0].first == x && vertices[0].second == y;
+    if (vertices.size() == 1u) {
+        if (vertices[0].first != x) return false;
+        return decide(vertices[0].second == y);
+    }
     if (vertices.size() == 2u) {
         const auto& a = vertices[0];
         const auto& b = vertices[1];
@@ -59,7 +61,8 @@ bool contains_vertex(const OuterPolygon2d& outer,
                              - (b.second - a.second) * (x - a.first);
         const Rational dot = (x - a.first) * (x - b.first)
                            + (y - a.second) * (y - b.second);
-        return cross == Rational(0) && dot <= Rational(0);
+        if (cross != Rational(0)) return false;
+        return decide(dot <= Rational(0));
     }
     for (std::size_t i = 0u; i != vertices.size(); ++i) {
         const auto& a = vertices[i];
