@@ -326,6 +326,66 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
         ARIADNE_TESTING_PROVE(std::abs(max_y - 1.0) < 1e-6);
     }
 
+    Void test_outer_projection_enclosure() {
+        // Certified outer projection is independent of the potentially
+        // cycling exact-boundary simplex walk.
+        D = ExactBoxType::unit_box(2);
+        x = Affine<FloatDPBounds>::variables(2, dp);
+        set = ValidatedAffineConstrainedImageSet(D, {x[0], x[1]}, {x[0] <= 0.0_x});
+        const auto polygon = outer_project2d(set, 0u, 1u, 24u);
+        ARIADNE_TESTING_PROVE(polygon.size() >= 3u);
+
+        const auto contains = [&](const Rational& px, const Rational& py) {
+            const auto& points = polygon.vertices();
+            if (points.size() < 3u) return false;
+            for (std::size_t i = 0u; i != points.size(); ++i) {
+                const auto& a = points[i];
+                const auto& b = points[(i + 1u) % points.size()];
+                const Rational cross =
+                    (b.first - a.first) * (py - a.second) -
+                    (b.second - a.second) * (px - a.first);
+                if (cross < Rational(0)) return false;
+            }
+            return true;
+        };
+        bool all_contained = true;
+        for (int ix = -4; ix <= 0; ++ix) {
+            for (int iy = -4; iy <= 4; ++iy) {
+                const Rational px = Rational(ix) / Rational(4);
+                const Rational py = Rational(iy) / Rational(4);
+                if (!contains(px, py)) all_contained = false;
+            }
+        }
+        ARIADNE_TESTING_PROVE(all_contained);
+        ARIADNE_TESTING_EXPECT_EXCEPTION(outer_project2d(set, 0u, 0u));
+        ARIADNE_TESTING_EXPECT_EXCEPTION(outer_project2d(set, 0u, 2u));
+        ARIADNE_TESTING_EXPECT_EXCEPTION(outer_project2d(set, 0u, 1u, 0u));
+
+        // No constraints: support bounds must still enclose a zonotope.
+        set = ValidatedAffineConstrainedImageSet(D, {x[0], x[1]});
+        const auto unconstrained = outer_project2d(set, 0u, 1u, 16u);
+        ARIADNE_TESTING_PROVE(unconstrained.size() >= 3u);
+        const auto& p = unconstrained.vertices();
+        bool corners_inside = true;
+        for (int sx : {-1, 1}) {
+            for (int sy : {-1, 1}) {
+                bool inside = true;
+                for (std::size_t i = 0u; i != p.size(); ++i) {
+                    const auto& a = p[i];
+                    const auto& b = p[(i + 1u) % p.size()];
+                    const Rational px(sx), py(sy);
+                    if ((b.first - a.first) * (py - a.second) -
+                        (b.second - a.second) * (px - a.first) < Rational(0)) {
+                        inside = false;
+                        break;
+                    }
+                }
+                if (!inside) corners_inside = false;
+            }
+        }
+        ARIADNE_TESTING_PROVE(corners_inside);
+    }
+
     Void test_empty_constrained_boundary() {
         // The parameter domain is [-1,1]^2, but -x[1]<=-2 requires
         // x[1]>=2. The affine image is therefore empty and has no boundary.
@@ -426,6 +486,7 @@ int main(int argc, char** argv) {
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_nonunit_domain);
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_separated);
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_constrained_boundary);
+    ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_outer_projection_enclosure);
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_empty_constrained_boundary);
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_large_zonotope_boundary);
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_collinear_negative_zonotope_boundary);

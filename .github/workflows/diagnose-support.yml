@@ -25,7 +25,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          cmake --build build-support-diagnostic --target test_support_polygon --parallel 4 > compiler-diagnostic.log 2>&1
+          cmake --build build-support-diagnostic --target tests --parallel 4 > compiler-diagnostic.log 2>&1
           result=$?
           cat compiler-diagnostic.log
           if [ "$result" -ne 0 ]; then

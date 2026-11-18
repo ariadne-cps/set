@@ -38,6 +38,7 @@
 #include "function/affine_model.hpp"
 #include "function/constraint.hpp"
 #include "geometry/declarations.hpp"
+#include "set/exact_support_polygon.hpp"
 #include "logging/logging.hpp"
 #include "utility/container.hpp"
 
@@ -162,6 +163,18 @@ class ValidatedAffineConstrainedImageSet
   private:
     Void construct(const ExactBoxType& D, const Matrix<FloatDP>& G, const Vector<FloatDP>& c);
 };
+
+/** @brief Validated two-coordinate outer projection, independent of boundary traversal.
+ *
+ *  Optimisation supplies candidate dual multipliers only. Each support
+ *  bound is recomputed with outward interval arithmetic and exact rational
+ *  halfplane clipping. The result is a conservative mathematical polygon,
+ *  not the exact affine constrained boundary and not display coordinates.
+ *  The initial enclosure must be finite; invalid axes or a zero direction
+ *  budget throw. Higher budgets change accuracy but not soundness.
+ */
+OuterPolygon2d outer_project2d(const ValidatedAffineConstrainedImageSet& set,
+                               SizeType xind, SizeType yind, SizeType directions = 48u);
 
 inline OutputStream& operator<<(OutputStream& os, const ValidatedAffineConstrainedImageSet& as) {
     return as._write(os);
