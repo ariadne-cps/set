@@ -425,6 +425,84 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
         }
     }
 
+    Void test_outer_projection_fallback_report() {
+        D = ExactBoxType::unit_box(2);
+        x = Affine<FloatDPBounds>::variables(2, dp);
+        set = ValidatedAffineConstrainedImageSet(D, {x[0], x[1]}, {x[0] <= 0.0_x});
+
+        // Avoid the simplex altogether. Every direction still has a sound
+        // support certificate using the zero dual multiplier.
+        const SizeType directions = 12u;
+        const auto report = outer_project2d_with_report(
+            set, 0u, 1u, directions, false);
+        ARIADNE_TESTING_EXPECT_EQUAL(report.requested_directions, directions);
+        ARIADNE_TESTING_EXPECT_EQUAL(report.certified_cuts, directions);
+        ARIADNE_TESTING_EXPECT_EQUAL(report.simplex_cuts, 0u);
+        ARIADNE_TESTING_EXPECT_EQUAL(report.relaxed_cuts, directions);
+        ARIADNE_TESTING_EXPECT_EQUAL(report.simplex_failures, 0u);
+        ARIADNE_TESTING_PROVE(report.used_relaxation());
+        ARIADNE_TESTING_PROVE(!report.box_only());
+        ARIADNE_TESTING_EXPECT_EQUAL(report.polygon.size(), 4u);
+
+        // An infeasible constraint does not license claiming mathematical
+        // emptiness from an approximate LP solve or from a bounding box.
+        set = ValidatedAffineConstrainedImageSet(D, {x[0], x[1]});
+        set.new_parameter_constraint(-1.0_x * x[0] <= -2.0_x);
+        ARIADNE_TESTING_PROVE(definitely(set.is_empty()));
+        const auto empty_source = outer_project2d_with_report(
+            set, 0u, 1u, directions, false);
+        ARIADNE_TESTING_EXPECT_EQUAL(empty_source.relaxed_cuts, directions);
+        ARIADNE_TESTING_PROVE(!empty_source.polygon.empty());
+    }
+
+    Void test_outer_projection_model_errors_and_guard_bounds() {
+        // Both the image and the affine guard carry explicit nonzero errors.
+        // The constructed points stay feasible for every permitted guard
+        // error; the polygon must enclose the full image error interval.
+        D = ExactBoxType::unit_box(2);
+        Vector<ValidatedAffineModelDP> models =
+            ValidatedAffineModelDP::scalings(D, dp);
+        models[0].error() += FloatDPError(ExactDouble(0.125), dp);
+        models[1].error() += FloatDPError(ExactDouble(0.25), dp);
+
+        ValidatedAffineModelDP guard = models[0];
+        guard.error() += FloatDPError(ExactDouble(0.125), dp);
+        List<ValidatedAffineModelConstraintDP> guards;
+        const FloatDPBounds low(ExactDouble(-2.0), ExactDouble(-1.875), dp);
+        const FloatDPBounds high(ExactDouble(-0.25), ExactDouble(-0.125), dp);
+        guards.append(ValidatedAffineModelConstraintDP(low, guard, high));
+        set = ValidatedAffineConstrainedImageSet(D, models, guards);
+
+        const auto result = outer_project2d_with_report(set, 0u, 1u, 24u, false);
+        ARIADNE_TESTING_EXPECT_EQUAL(result.certified_cuts, 24u);
+        const auto& polygon = result.polygon.vertices();
+        ARIADNE_TESTING_PROVE(polygon.size() >= 3u);
+
+        bool all_contained = true;
+        for (int ix = -8; ix <= -7; ++ix) {
+            for (int iy = -8; iy <= 8; ++iy) {
+                // Deliberately check extremal output errors (not just model centres).
+                for (int ex : {-1, 1}) {
+                    for (int ey : {-1, 1}) {
+                        const Rational px =
+                            Rational(ix) / Rational(8) + Rational(ex) / Rational(8);
+                        const Rational py =
+                            Rational(iy) / Rational(8) + Rational(ey) / Rational(4);
+                        for (std::size_t i = 0u; i != polygon.size(); ++i) {
+                            const auto& a = polygon[i];
+                            const auto& b = polygon[(i + 1u) % polygon.size()];
+                            const Rational cross =
+                                (b.first - a.first) * (py - a.second) -
+                                (b.second - a.second) * (px - a.first);
+                            if (cross < Rational(0)) all_contained = false;
+                        }
+                    }
+                }
+            }
+        }
+        ARIADNE_TESTING_PROVE(all_contained);
+    }
+
     Void test_empty_constrained_boundary() {
         // The parameter domain is [-1,1]^2, but -x[1]<=-2 requires
         // x[1]>=2. The affine image is therefore empty and has no boundary.
@@ -527,6 +605,8 @@ int main(int argc, char** argv) {
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_constrained_boundary);
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_outer_projection_enclosure);
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_outer_projection_multiple_constraints);
+    ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_outer_projection_fallback_report);
+    ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_outer_projection_model_errors_and_guard_bounds);
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_empty_constrained_boundary);
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_large_zonotope_boundary);
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_collinear_negative_zonotope_boundary);

@@ -41,8 +41,9 @@
 
 namespace Ariadne {
 
-OuterPolygon2d outer_project2d(const ValidatedAffineConstrainedImageSet& set,
-                               SizeType xind, SizeType yind, SizeType directions) {
+OuterProjection2dResult outer_project2d_with_report(
+    const ValidatedAffineConstrainedImageSet& set,
+    SizeType xind, SizeType yind, SizeType directions, bool attempt_simplex) {
     if (xind >= set.dimension() || yind >= set.dimension() || xind == yind) {
         throw std::invalid_argument("Invalid or repeated affine projection coordinates");
     }
@@ -120,8 +121,9 @@ OuterPolygon2d outer_project2d(const ValidatedAffineConstrainedImageSet& set,
     Matrix<FloatDPApproximation> B(nc, nc, dp);
     Vector<FloatDPApproximation> x(np, dp), y(nc, dp);
     bool lp_ready = false;
+    SizeType simplex_failures = 0u;
 
-    if (nc != 0u) {
+    if (nc != 0u && attempt_simplex) {
         for (SizeType j = 0u; j != nx; ++j) {
             l[j] = FloatDPApproximation(-1.0_x, dp);
             u[j] = FloatDPApproximation(+1.0_x, dp);
@@ -149,11 +151,14 @@ OuterPolygon2d outer_project2d(const ValidatedAffineConstrainedImageSet& set,
                 l, u, A, b, vt, p, B, x, y));
         } catch (const std::exception&) {
             lp_ready = false;
+            ++simplex_failures;
         }
     }
 
     std::vector<CertifiedSupportHalfplane2d> cuts;
     cuts.reserve(directions);
+    SizeType simplex_cuts = 0u;
+    SizeType relaxed_cuts = 0u;
     for (SizeType direction = 0u; direction != directions; ++direction) {
         // Each direction is the exact pair of binary64 values chosen here.
         const double angle = 2.0 * std::numbers::pi *
@@ -174,6 +179,7 @@ OuterPolygon2d outer_project2d(const ValidatedAffineConstrainedImageSet& set,
         cost[nx + nc + 1u] = -FloatDPApproximation(dy, dp);
 
         std::vector<FloatDPBounds> multipliers(nc, zero);
+        bool used_simplex = false;
         if (lp_ready) {
             try {
                 solver.hotstarted_minimise(cost, l, u, A, b, vt, p, B);
@@ -185,8 +191,10 @@ OuterPolygon2d outer_project2d(const ValidatedAffineConstrainedImageSet& set,
                     }
                     multipliers[i] = bd(estimate.raw().get_d());
                 }
+                used_simplex = true;
             } catch (const std::exception&) {
                 lp_ready = false;
+                ++simplex_failures;
                 std::fill(multipliers.begin(), multipliers.end(), zero);
             }
         }
@@ -214,8 +222,18 @@ OuterPolygon2d outer_project2d(const ValidatedAffineConstrainedImageSet& set,
         const double certified_upper = support.upper_raw().get_d();
         if (!std::isfinite(certified_upper)) continue;
         cuts.push_back({dx, dy, certified_upper});
+        if (nc != 0u) {
+            if (used_simplex) ++simplex_cuts;
+            else ++relaxed_cuts;
+        }
     }
-    return certified_support_polygon_2d({xl, xu, yl, yu}, cuts);
+    return {certified_support_polygon_2d({xl, xu, yl, yu}, cuts),
+            directions, cuts.size(), simplex_cuts, relaxed_cuts, simplex_failures};
+}
+
+OuterPolygon2d outer_project2d(const ValidatedAffineConstrainedImageSet& set,
+                               SizeType xind, SizeType yind, SizeType directions) {
+    return outer_project2d_with_report(set, xind, yind, directions).polygon;
 }
 
 } // namespace Ariadne

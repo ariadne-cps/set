@@ -173,6 +173,42 @@ class ValidatedAffineConstrainedImageSet
  *  The initial enclosure must be finite; invalid axes or a zero direction
  *  budget throw. Higher budgets change accuracy but not soundness.
  */
+/** @brief Diagnostics for the certified outer projection, not a feasibility proof.
+ *
+ *  `certified_cuts` counts finite outward support inequalities; some may
+ *  be redundant. `relaxed_cuts` counts cuts computed with zero dual
+ *  multipliers, either by explicit choice or after a simplex failure.
+ *  An empty source set may have a nonempty outer projection: this report
+ *  does not claim to decide source-set emptiness.
+ */
+struct OuterProjection2dResult {
+    OuterPolygon2d polygon;
+    SizeType requested_directions;
+    SizeType certified_cuts;
+    SizeType simplex_cuts;
+    SizeType relaxed_cuts;
+    SizeType simplex_failures;
+
+    /** @brief True when no finite directional support improved the box representation. */
+    bool box_only() const { return certified_cuts == 0u; }
+    /** @brief True if any constrained support used zero dual multipliers. */
+    bool used_relaxation() const { return relaxed_cuts != 0u; }
+};
+
+/** @brief Compute a certified outer polygon together with support diagnostics.
+ *
+ *  If attempt_simplex is false, constrained support bounds use zero dual
+ *  multipliers. This is less accurate but remains certified and avoids all
+ *  simplex iterations. Failed simplex attempts likewise fall back to zero
+ *  multipliers. If no finite support can be constructed, the validated
+ *  initial bounding box is retained. No emptiness claim is made.
+ */
+OuterProjection2dResult outer_project2d_with_report(
+    const ValidatedAffineConstrainedImageSet& set,
+    SizeType xind, SizeType yind, SizeType directions = 48u,
+    bool attempt_simplex = true);
+
+/** @brief Convenience API returning only the conservative mathematical polygon. */
 OuterPolygon2d outer_project2d(const ValidatedAffineConstrainedImageSet& set,
                                SizeType xind, SizeType yind, SizeType directions = 48u);
 
