@@ -27,15 +27,22 @@ inline std::vector<std::uint8_t> decode_rle_base64(std::string_view encoded) {
     std::vector<std::uint8_t> packed;
     unsigned accumulator = 0u;
     unsigned bits = 0u;
-    for (char ch : encoded) {
+    for (char ch: encoded) {
         unsigned digit;
-        if (ch >= 'A' && ch <= 'Z') digit = static_cast<unsigned>(ch - 'A');
-        else if (ch >= 'a' && ch <= 'z') digit = static_cast<unsigned>(ch - 'a') + 26u;
-        else if (ch >= '0' && ch <= '9') digit = static_cast<unsigned>(ch - '0') + 52u;
-        else if (ch == '+') digit = 62u;
-        else if (ch == '/') digit = 63u;
-        else if (ch == '=') break;
-        else throw std::runtime_error("Invalid SPRE22 fixture encoding");
+        if (ch >= 'A' && ch <= 'Z')
+            digit = static_cast<unsigned>(ch - 'A');
+        else if (ch >= 'a' && ch <= 'z')
+            digit = static_cast<unsigned>(ch - 'a') + 26u;
+        else if (ch >= '0' && ch <= '9')
+            digit = static_cast<unsigned>(ch - '0') + 52u;
+        else if (ch == '+')
+            digit = 62u;
+        else if (ch == '/')
+            digit = 63u;
+        else if (ch == '=')
+            break;
+        else
+            throw std::runtime_error("Invalid SPRE22 fixture encoding");
         accumulator = (accumulator << 6u) | digit;
         bits += 6u;
         if (bits >= 8u) {
@@ -105,7 +112,8 @@ inline ValidatedTaylorModelDP read_taylor_model(BinaryReader& reader, SizeType d
     const FloatDP threshold = reader.read_float();
     const FloatDP error = reader.read_float();
     const SizeType terms = reader.read_uint(4u);
-    if (terms > 10000000u) throw std::runtime_error("Excessive SPRE22 term count");
+    if (terms > 10000000u)
+        throw std::runtime_error("Excessive SPRE22 term count");
     Expansion<MultiIndex, FloatDP> expansion(arguments, dp);
     expansion.reserve(terms);
     for (SizeType i = 0u; i != terms; ++i) {
@@ -145,7 +153,8 @@ inline CapturedSet decode_critical_11591(std::string_view encoded) {
     if (projection_n != 8u || projection_x != 1u || projection_y != 2u)
         throw std::runtime_error("Unexpected SPRE22 projection");
     const SizeType dimension = reader.read_uint(4u);
-    if (dimension != 26u) throw std::runtime_error("Unexpected SPRE22 parameter count");
+    if (dimension != 26u)
+        throw std::runtime_error("Unexpected SPRE22 parameter count");
     ExactBoxType domain(dimension);
     for (SizeType i = 0u; i != dimension; ++i) {
         const FloatDP lower = reader.read_float();
@@ -162,7 +171,8 @@ inline CapturedSet decode_critical_11591(std::string_view encoded) {
     const ValidatedVectorMultivariateTaylorFunctionModelDP mapping(domain, models);
 
     const SizeType nc = reader.read_uint(4u);
-    if (nc != 4u) throw std::runtime_error("Unexpected SPRE22 constraint count");
+    if (nc != 4u)
+        throw std::runtime_error("Unexpected SPRE22 constraint count");
     List<ValidatedConstraint> constraints;
     for (SizeType i = 0u; i != nc; ++i) {
         const FloatDPBounds lower = reader.read_bounds();
@@ -171,7 +181,8 @@ inline CapturedSet decode_critical_11591(std::string_view encoded) {
         constraints.append(ValidatedConstraint(
             lower, ValidatedScalarMultivariateTaylorFunctionModelDP(domain, model), upper));
     }
-    if (!reader.at_end()) throw std::runtime_error("Trailing SPRE22 record bytes");
+    if (!reader.at_end())
+        throw std::runtime_error("Trailing SPRE22 record bytes");
     return {ValidatedConstrainedImageSet(
                 domain, ValidatedVectorMultivariateFunctionModelDP(mapping), constraints),
             projection_x, projection_y};

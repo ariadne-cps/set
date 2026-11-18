@@ -45,14 +45,16 @@ namespace {
 bool inside_outer_polygon(const Polytope& polygon, const Rational& x,
                           const Rational& y) {
     const auto& vertices = polygon.vertices();
-    if (vertices.size() < 3u) return false;
+    if (vertices.size() < 3u)
+        return false;
     for (SizeType i = 0u; i != vertices.size(); ++i) {
         const auto& a = vertices[i];
         const auto& b = vertices[(i + 1u) % vertices.size()];
         const Rational cross =
             (b[0] - a[0]) * (y - a[1]) -
             (b[1] - a[1]) * (x - a[0]);
-        if (cross < Rational(0)) return false;
+        if (cross < Rational(0))
+            return false;
     }
     return true;
 }
@@ -75,13 +77,16 @@ class TestSPRE22OuterProjection : public Ariadne::Testing::ContextFixture {
 
             // The two real fixtures are snapshots 1 and 17 of the 48
             // captured SPRE22 enclosures. Cover both coordinate planes.
-            for (const auto& axes : {std::pair<SizeType, SizeType>{1u, 2u},
-                                    std::pair<SizeType, SizeType>{3u, 4u}}) {
+            for (const auto& axes: {
+                     std::pair<SizeType, SizeType>{1u, 2u},
+                     std::pair<SizeType, SizeType>{3u, 4u}
+            }) {
                 const auto start = std::chrono::steady_clock::now();
                 const auto refined = outer_project2d_with_report(
                     affine, axes.first, axes.second, 24u, true);
                 const auto elapsed = std::chrono::duration<double, std::milli>(
-                    std::chrono::steady_clock::now() - start).count();
+                                         std::chrono::steady_clock::now() - start)
+                                         .count();
 
                 const auto fallback = outer_project2d_with_report(
                     affine, axes.first, axes.second, 24u, false);
@@ -98,7 +103,7 @@ class TestSPRE22OuterProjection : public Ariadne::Testing::ContextFixture {
                 // certificate should not extend beyond the initial box.
                 // Geometry is independently checked using rational predicates.
                 bool refined_inside_fallback = true;
-                for (const auto& vertex : refined.polygon.vertices()) {
+                for (const auto& vertex: refined.polygon.vertices()) {
                     if (!inside_outer_polygon(
                             fallback.polygon, vertex[0], vertex[1])) {
                         refined_inside_fallback = false;
@@ -107,12 +112,12 @@ class TestSPRE22OuterProjection : public Ariadne::Testing::ContextFixture {
                 ARIADNE_TESTING_PROVE(refined_inside_fallback);
                 ARIADNE_TESTING_NOTE(
                     "SPRE22 real capture " << (i == 0u ? 1u : 17u)
-                    << " projected axes=(" << axes.first << "," << axes.second
-                    << ") simplex_24_directions_ms=" << elapsed
-                    << " support_cuts=" << refined.certified_cuts
-                    << " simplex_cuts=" << refined.simplex_cuts
-                    << " relaxed_cuts=" << refined.relaxed_cuts
-                    << " simplex_failures=" << refined.simplex_failures);
+                                           << " projected axes=(" << axes.first << "," << axes.second
+                                           << ") simplex_24_directions_ms=" << elapsed
+                                           << " support_cuts=" << refined.certified_cuts
+                                           << " simplex_cuts=" << refined.simplex_cuts
+                                           << " relaxed_cuts=" << refined.relaxed_cuts
+                                           << " simplex_failures=" << refined.simplex_failures);
             }
         }
     }

@@ -38,8 +38,8 @@
 #include "function/affine_model.hpp"
 #include "function/constraint.hpp"
 #include "geometry/declarations.hpp"
-#include "set/polytope.hpp"
 #include "logging/logging.hpp"
+#include "set/polytope.hpp"
 #include "utility/container.hpp"
 
 namespace Ariadne {
@@ -215,7 +215,7 @@ OuterProjection2dResult outer_project2d_with_report(
 
 /** @brief Convenience API returning only the conservative mathematical polygon. */
 Polytope outer_project2d(const ValidatedAffineConstrainedImageSet& set,
-                               SizeType xind, SizeType yind, SizeType directions = 48u);
+                         SizeType xind, SizeType yind, SizeType directions = 48u);
 
 inline OutputStream& operator<<(OutputStream& os, const ValidatedAffineConstrainedImageSet& as) {
     return as._write(os);

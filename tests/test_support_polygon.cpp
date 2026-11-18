@@ -46,9 +46,11 @@ Rational exact(double value) {
 
 bool includes(const Polytope& polygon, const Rational& x, const Rational& y) {
     const auto& vertices = polygon.vertices();
-    if (vertices.empty()) return false;
+    if (vertices.empty())
+        return false;
     if (vertices.size() == 1u) {
-        if (vertices[0][0] != x) return false;
+        if (vertices[0][0] != x)
+            return false;
         return decide(vertices[0][1] == y);
     }
     if (vertices.size() == 2u) {
@@ -56,7 +58,8 @@ bool includes(const Polytope& polygon, const Rational& x, const Rational& y) {
         const auto& b = vertices[1];
         const Rational cross = (b[0] - a[0]) * (y - a[1]) -
                                (b[1] - a[1]) * (x - a[0]);
-        if (cross != Rational(0)) return false;
+        if (cross != Rational(0))
+            return false;
         const Rational dot = (x - a[0]) * (x - b[0]) +
                              (y - a[1]) * (y - b[1]);
         return dot <= Rational(0);
@@ -66,12 +69,13 @@ bool includes(const Polytope& polygon, const Rational& x, const Rational& y) {
         const auto& b = vertices[(i + 1u) % vertices.size()];
         const Rational cross = (b[0] - a[0]) * (y - a[1]) -
                                (b[1] - a[1]) * (x - a[0]);
-        if (cross < Rational(0)) return false;
+        if (cross < Rational(0))
+            return false;
     }
     return true;
 }
 
-}
+} // namespace
 
 class TestSupportPolygon : public Ariadne::Testing::ContextFixture {
   public:
@@ -79,10 +83,10 @@ class TestSupportPolygon : public Ariadne::Testing::ContextFixture {
 
     Void test_exact_clipping_and_inclusion() {
         const std::vector<CertifiedSupportHalfplane2d> cuts = {
-            {3.0, 2.0, 0.3},
-            {2.0, -3.0, 0.4},
-            {-1.0, 0.0, 0.75},
-            {0.0, 1.0, 0.6}
+            { 3.0,  2.0,  0.3},
+            { 2.0, -3.0,  0.4},
+            {-1.0,  0.0, 0.75},
+            { 0.0,  1.0,  0.6}
         };
         const auto polygon = certified_support_polygon_2d({-1.0, 1.0, -1.0, 1.0}, cuts);
         ARIADNE_TESTING_PROVE(polygon.number_of_vertices() >= 3u);
@@ -98,19 +102,20 @@ class TestSupportPolygon : public Ariadne::Testing::ContextFixture {
                 const Rational px = exact(static_cast<double>(ix) / 16.0);
                 const Rational py = exact(static_cast<double>(iy) / 16.0);
                 bool feasible = true;
-                for (const auto& cut : cuts) {
+                for (const auto& cut: cuts) {
                     if (exact(cut.nx) * px + exact(cut.ny) * py > exact(cut.upper)) {
                         feasible = false;
                         break;
                     }
                 }
-                if (feasible && !includes(polygon, px, py)) all_contained = false;
+                if (feasible && !includes(polygon, px, py))
+                    all_contained = false;
             }
         }
         ARIADNE_TESTING_PROVE(all_contained);
         // The result must be genuinely tighter than the initial box.
         bool has_cut_vertex = false;
-        for (const auto& p : polygon.vertices()) {
+        for (const auto& p: polygon.vertices()) {
             if (p[0] != exact(-1.0) && p[0] != exact(1.0) &&
                 p[1] != exact(-1.0) && p[1] != exact(1.0)) {
                 has_cut_vertex = true;
@@ -121,19 +126,24 @@ class TestSupportPolygon : public Ariadne::Testing::ContextFixture {
 
     Void test_degenerate_intersections() {
         const auto empty = certified_support_polygon_2d(
-            {-1.0, 1.0, -1.0, 1.0},
+            {
+                -1.0, 1.0, -1.0, 1.0
+        },
             {{1.0, 0.0, -0.5}, {-1.0, 0.0, -0.5}});
         ARIADNE_TESTING_PROVE(empty.empty());
 
         const auto singleton = certified_support_polygon_2d(
-            {-1.0, 1.0, -1.0, 1.0},
-            {{1.0, 0.0, 0.0}, {-1.0, 0.0, 0.0},
-             {0.0, 1.0, 0.0}, {0.0, -1.0, 0.0}});
+            {
+                -1.0, 1.0, -1.0, 1.0
+        },
+            {{1.0, 0.0, 0.0}, {-1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, -1.0, 0.0}});
         ARIADNE_TESTING_EXPECT_EQUAL(singleton.number_of_vertices(), 1u);
         ARIADNE_TESTING_PROVE(includes(singleton, Rational(0), Rational(0)));
 
         const auto segment = certified_support_polygon_2d(
-            {-1.0, 1.0, -1.0, 1.0},
+            {
+                -1.0, 1.0, -1.0, 1.0
+        },
             {{1.0, 0.0, 0.0}, {-1.0, 0.0, 0.0}});
         ARIADNE_TESTING_EXPECT_EQUAL(segment.number_of_vertices(), 2u);
         ARIADNE_TESTING_PROVE(includes(segment, Rational(0), Rational(0)));
@@ -148,7 +158,10 @@ class TestSupportPolygon : public Ariadne::Testing::ContextFixture {
         ARIADNE_TESTING_EXPECT_EXCEPTION(
             certified_support_polygon_2d({1.0, -1.0, -1.0, 1.0}, none));
         ARIADNE_TESTING_EXPECT_EXCEPTION(
-            certified_support_polygon_2d({-1.0, 1.0, -1.0, 1.0}, {{1.0, 0.0, std::numeric_limits<double>::infinity()}}));
+            certified_support_polygon_2d({
+                                             -1.0, 1.0, -1.0, 1.0
+        },
+                                         {{1.0, 0.0, std::numeric_limits<double>::infinity()}}));
     }
 };
 

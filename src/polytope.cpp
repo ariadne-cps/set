@@ -31,8 +31,8 @@
 
 #include <algorithm>
 #include <cmath>
-#include <utility>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 #include "algebra/vector.hpp"
@@ -191,8 +191,7 @@ RationalPoint mean_of_generators(const Polytope& p) {
 
 Polytope certified_support_polygon_2d(
     const std::array<double, 4>& bounds,
-    const std::vector<CertifiedSupportHalfplane2d>& halfplanes)
-{
+    const std::vector<CertifiedSupportHalfplane2d>& halfplanes) {
     using Vertex = std::pair<Rational, Rational>;
     const auto exact = [](double value) -> Rational {
         if (!std::isfinite(value)) {
@@ -210,7 +209,7 @@ Polytope certified_support_polygon_2d(
         {exact(bounds[0]), exact(bounds[3])}
     };
     const Rational zero(0);
-    for (const auto& plane : halfplanes) {
+    for (const auto& plane: halfplanes) {
         const Rational a = exact(plane.nx);
         const Rational b = exact(plane.ny);
         const Rational c = exact(plane.upper);
@@ -219,11 +218,12 @@ Polytope certified_support_polygon_2d(
         };
 
         std::vector<Vertex> next;
-        if (clipped.empty()) break;
+        if (clipped.empty())
+            break;
         next.reserve(clipped.size() + 2u);
         Vertex previous = clipped.back();
         Rational previous_distance = distance(previous);
-        for (const Vertex& current : clipped) {
+        for (const Vertex& current: clipped) {
             const Rational current_distance = distance(current);
             const bool was_inside = previous_distance <= zero;
             const bool is_inside = current_distance <= zero;
@@ -232,7 +232,8 @@ Polytope certified_support_polygon_2d(
                 next.emplace_back(previous.first + t * (current.first - previous.first),
                                   previous.second + t * (current.second - previous.second));
             }
-            if (is_inside) next.push_back(current);
+            if (is_inside)
+                next.push_back(current);
             previous = current;
             previous_distance = current_distance;
         }
@@ -242,7 +243,7 @@ Polytope certified_support_polygon_2d(
     // Use the generic exact V-polytope representation. Its reduction
     // removes duplicate/collinear generators and preserves degenerate sets.
     Polytope result(2u);
-    for (const auto& vertex : clipped) {
+    for (const auto& vertex: clipped) {
         Vector<Rational> coordinates(2u, Rational(0));
         coordinates[0] = vertex.first;
         coordinates[1] = vertex.second;

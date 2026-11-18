@@ -26,8 +26,6 @@
  *  @brief Direct validated outer projection of constrained affine images.
  */
 
-#include "set/affine_set.hpp"
-
 #include <algorithm>
 #include <cmath>
 #include <numbers>
@@ -36,6 +34,8 @@
 
 #include "algebra/matrix.hpp"
 #include "algebra/vector.hpp"
+#include "set/affine_set.hpp"
+
 #include "linear-programming/linear_simplex_algorithm.hpp"
 
 namespace Ariadne {
@@ -99,8 +99,10 @@ OuterProjection2dResult outer_project2d_with_report(
         // The guard endpoints are validated outward bounds, not central values.
         const double cl = constraint.lower_bound().lower_raw().get_d();
         const double cu = constraint.upper_bound().upper_raw().get_d();
-        if (std::isfinite(cl)) lower[nx + i] = max(lower[nx + i], bd(cl) - error);
-        if (std::isfinite(cu)) upper[nx + i] = min(upper[nx + i], bd(cu) + error);
+        if (std::isfinite(cl))
+            lower[nx + i] = max(lower[nx + i], bd(cl) - error);
+        if (std::isfinite(cu))
+            upper[nx + i] = min(upper[nx + i], bd(cu) + error);
     }
     const FloatDPBounds err_x = bd(xa.error().raw().get_d());
     const FloatDPBounds err_y = bd(ya.error().raw().get_d());
@@ -133,7 +135,8 @@ OuterProjection2dResult outer_project2d_with_report(
             for (SizeType j = 0u; j != nx; ++j) {
                 A[i][j] = neg(numeric_cast<FloatDPApproximation>(fm.gradient(j)));
             }
-            for (SizeType j = nx; j != np; ++j) A[i][j] = 0.0_x;
+            for (SizeType j = nx; j != np; ++j)
+                A[i][j] = 0.0_x;
             A[i][nx + i] = 1.0_x;
             const FloatDPApproximation fe =
                 numeric_cast<FloatDPApproximation>(fm.error().raw());
@@ -161,7 +164,7 @@ OuterProjection2dResult outer_project2d_with_report(
     for (SizeType direction = 0u; direction != directions; ++direction) {
         // Each direction is the exact pair of binary64 values chosen here.
         const double angle = 2.0 * std::numbers::pi *
-            static_cast<double>(direction) / static_cast<double>(directions);
+                             static_cast<double>(direction) / static_cast<double>(directions);
         const double dx = std::cos(angle), dy = std::sin(angle);
         const FloatDPBounds bx = bd(dx), by = bd(dy);
         std::vector<FloatDPBounds> objective(np, zero);
@@ -185,7 +188,8 @@ OuterProjection2dResult outer_project2d_with_report(
                 for (SizeType i = 0u; i != nc; ++i) {
                     FloatDPApproximation estimate(0.0_x, dp);
                     for (SizeType k = 0u; k != nc; ++k) {
-                        if (p[k] >= np) throw std::runtime_error("Invalid dual basis index");
+                        if (p[k] >= np)
+                            throw std::runtime_error("Invalid dual basis index");
                         estimate -= cost[p[k]] * B[k][i];
                     }
                     multipliers[i] = bd(estimate.raw().get_d());
@@ -203,7 +207,8 @@ OuterProjection2dResult outer_project2d_with_report(
         // Outward interval operations prove the bound independently of LP.
         FloatDPBounds support = bx * from_float(xa.value()) +
                                 by * from_float(ya.value());
-        for (SizeType i = 0u; i != nc; ++i) support += multipliers[i] * rhs[i];
+        for (SizeType i = 0u; i != nc; ++i)
+            support += multipliers[i] * rhs[i];
         bool finite = true;
         for (SizeType j = 0u; j != np; ++j) {
             FloatDPBounds reduced = objective[j];
@@ -217,13 +222,17 @@ OuterProjection2dResult outer_project2d_with_report(
             }
             support += max(reduced * lower[j], reduced * upper[j]);
         }
-        if (!finite) continue;
+        if (!finite)
+            continue;
         const double certified_upper = support.upper_raw().get_d();
-        if (!std::isfinite(certified_upper)) continue;
+        if (!std::isfinite(certified_upper))
+            continue;
         cuts.push_back({dx, dy, certified_upper});
         if (nc != 0u) {
-            if (used_simplex) ++simplex_cuts;
-            else ++relaxed_cuts;
+            if (used_simplex)
+                ++simplex_cuts;
+            else
+                ++relaxed_cuts;
         }
     }
     const std::array<double, 4> bounds{xl, xu, yl, yu};
@@ -244,7 +253,7 @@ OuterProjection2dResult outer_project2d_with_report(
 }
 
 Polytope outer_project2d(const ValidatedAffineConstrainedImageSet& set,
-                               SizeType xind, SizeType yind, SizeType directions) {
+                         SizeType xind, SizeType yind, SizeType directions) {
     return outer_project2d_with_report(set, xind, yind, directions).polygon;
 }
 

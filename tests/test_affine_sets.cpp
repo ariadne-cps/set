@@ -337,14 +337,16 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
 
         const auto contains = [&](const Rational& px, const Rational& py) {
             const auto& points = polygon.vertices();
-            if (points.size() < 3u) return false;
+            if (points.size() < 3u)
+                return false;
             for (std::size_t i = 0u; i != points.size(); ++i) {
                 const auto& a = points[i];
                 const auto& b = points[(i + 1u) % points.size()];
                 const Rational cross =
                     (b[0] - a[0]) * (py - a[1]) -
                     (b[1] - a[1]) * (px - a[0]);
-                if (cross < Rational(0)) return false;
+                if (cross < Rational(0))
+                    return false;
             }
             return true;
         };
@@ -353,7 +355,8 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
             for (int iy = -4; iy <= 4; ++iy) {
                 const Rational px = Rational(ix) / Rational(4);
                 const Rational py = Rational(iy) / Rational(4);
-                if (!contains(px, py)) all_contained = false;
+                if (!contains(px, py))
+                    all_contained = false;
             }
         }
         ARIADNE_TESTING_PROVE(all_contained);
@@ -367,20 +370,22 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
         ARIADNE_TESTING_PROVE(unconstrained.number_of_vertices() >= 3u);
         const auto& p = unconstrained.vertices();
         bool corners_inside = true;
-        for (int sx : {-1, 1}) {
-            for (int sy : {-1, 1}) {
+        for (int sx: {-1, 1}) {
+            for (int sy: {-1, 1}) {
                 bool inside = true;
                 for (std::size_t i = 0u; i != p.size(); ++i) {
                     const auto& a = p[i];
                     const auto& b = p[(i + 1u) % p.size()];
                     const Rational px(sx), py(sy);
                     if ((b[0] - a[0]) * (py - a[1]) -
-                        (b[1] - a[1]) * (px - a[0]) < Rational(0)) {
+                            (b[1] - a[1]) * (px - a[0]) <
+                        Rational(0)) {
                         inside = false;
                         break;
                     }
                 }
-                if (!inside) corners_inside = false;
+                if (!inside)
+                    corners_inside = false;
             }
         }
         ARIADNE_TESTING_PROVE(corners_inside);
@@ -408,7 +413,8 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
             for (int ix = -4; ix <= 4; ++ix) {
                 for (int iy = -4; iy <= 4; ++iy) {
                     if (!(ix + iy <= 4 && ix - iy <= 4 &&
-                          -ix + iy <= 4 && (nc == 3u || -ix - iy <= 4))) continue;
+                          -ix + iy <= 4 && (nc == 3u || -ix - iy <= 4)))
+                        continue;
                     const Rational px = Rational(ix) / Rational(4);
                     const Rational py = Rational(iy) / Rational(4);
                     for (std::size_t i = 0u; i != points.size(); ++i) {
@@ -417,7 +423,8 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
                         const Rational cross =
                             (b[0] - a[0]) * (py - a[1]) -
                             (b[1] - a[1]) * (px - a[0]);
-                        if (cross < Rational(0)) all_contained = false;
+                        if (cross < Rational(0))
+                            all_contained = false;
                     }
                 }
             }
@@ -484,8 +491,8 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
         for (int ix = -8; ix <= -7; ++ix) {
             for (int iy = -8; iy <= 8; ++iy) {
                 // Deliberately check extremal output errors (not just model centres).
-                for (int ex : {-1, 1}) {
-                    for (int ey : {-1, 1}) {
+                for (int ex: {-1, 1}) {
+                    for (int ey: {-1, 1}) {
                         const Rational px =
                             Rational(ix) / Rational(8) + Rational(ex) / Rational(8);
                         const Rational py =
@@ -496,7 +503,8 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
                             const Rational cross =
                                 (b[0] - a[0]) * (py - a[1]) -
                                 (b[1] - a[1]) * (px - a[0]);
-                            if (cross < Rational(0)) all_contained = false;
+                            if (cross < Rational(0))
+                                all_contained = false;
                         }
                     }
                 }

@@ -33,12 +33,13 @@
 #include <chrono>
 #include <cstdint>
 
-#include "ariadne-testing.hpp"
 #include "fixtures/spre22_critical_11591.hpp"
 #include "fixtures/spre22_snapshot_reader.hpp"
 #include "logging/test_runner.hpp"
 #include "set/affine_set.hpp"
 #include "set/function_set.hpp"
+
+#include "ariadne-testing.hpp"
 
 using namespace Ariadne;
 
@@ -49,32 +50,32 @@ namespace {
 bool contains_vertex(const Polytope& outer,
                      const Rational& x, const Rational& y) {
     const auto& vertices = outer.vertices();
-    if (vertices.empty()) return false;
+    if (vertices.empty())
+        return false;
     if (vertices.size() == 1u) {
-        if (vertices[0][0] != x) return false;
+        if (vertices[0][0] != x)
+            return false;
         return decide(vertices[0][1] == y);
     }
     if (vertices.size() == 2u) {
         const auto& a = vertices[0];
         const auto& b = vertices[1];
-        const Rational cross = (b[0] - a[0]) * (y - a[1])
-                             - (b[1] - a[1]) * (x - a[0]);
-        const Rational dot = (x - a[0]) * (x - b[0])
-                           + (y - a[1]) * (y - b[1]);
-        if (cross != Rational(0)) return false;
+        const Rational cross = (b[0] - a[0]) * (y - a[1]) - (b[1] - a[1]) * (x - a[0]);
+        const Rational dot = (x - a[0]) * (x - b[0]) + (y - a[1]) * (y - b[1]);
+        if (cross != Rational(0))
+            return false;
         return decide(dot <= Rational(0));
     }
     for (std::size_t i = 0u; i != vertices.size(); ++i) {
         const auto& a = vertices[i];
         const auto& b = vertices[(i + 1u) % vertices.size()];
-        if ((b[0] - a[0]) * (y - a[1])
-          - (b[1] - a[1]) * (x - a[0]) < Rational(0))
+        if ((b[0] - a[0]) * (y - a[1]) - (b[1] - a[1]) * (x - a[0]) < Rational(0))
             return false;
     }
     return true;
 }
 
-}
+} // namespace
 
 class TestSPRE22Critical : public Ariadne::Testing::ContextFixture {
   public:
@@ -96,7 +97,8 @@ class TestSPRE22Critical : public Ariadne::Testing::ContextFixture {
         const auto optimised = outer_project2d_with_report(
             affine, capture.x, capture.y, ndirections, true);
         const double elapsed_ms = std::chrono::duration<double, std::milli>(
-            std::chrono::steady_clock::now() - begin).count();
+                                      std::chrono::steady_clock::now() - begin)
+                                      .count();
         const auto relaxed = outer_project2d_with_report(
             affine, capture.x, capture.y, ndirections, false);
 
@@ -117,12 +119,13 @@ class TestSPRE22Critical : public Ariadne::Testing::ContextFixture {
             {box[capture.x].lower_bound().raw().get_d(),
              box[capture.x].upper_bound().raw().get_d(),
              box[capture.y].lower_bound().raw().get_d(),
-             box[capture.y].upper_bound().raw().get_d()}, {});
+             box[capture.y].upper_bound().raw().get_d()},
+            {});
         bool inside_box = true;
-        for (const auto& vertex : optimised.polygon.vertices())
+        for (const auto& vertex: optimised.polygon.vertices())
             if (!contains_vertex(initial, vertex[0], vertex[1]))
                 inside_box = false;
-        for (const auto& vertex : relaxed.polygon.vertices())
+        for (const auto& vertex: relaxed.polygon.vertices())
             if (!contains_vertex(initial, vertex[0], vertex[1]))
                 inside_box = false;
         ARIADNE_TESTING_PROVE(inside_box);
