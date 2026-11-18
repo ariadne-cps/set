@@ -24,3 +24,6 @@ foreach(TEST IN LISTS UNIT_TESTS)
 endforeach()
 add_custom_target(tests)
 add_dependencies(tests ${UNIT_TESTS})
+# The real SPRE22 replay must never hold a CI runner indefinitely if a
+# future simplex regression reintroduces cycling.
+set_tests_properties(test_spre22_outer_projection PROPERTIES TIMEOUT 120)
