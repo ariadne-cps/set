@@ -32,9 +32,9 @@
 #include <iostream>
 #include <memory>
 
-#include "fixtures/affine_projection_samples.hpp"
-#include "fixtures/affine_projection_record.hpp"
 #include "fixtures/affine_projection_reader.hpp"
+#include "fixtures/affine_projection_record.hpp"
+#include "fixtures/affine_projection_samples.hpp"
 #include "function/function.hpp"
 #include "geometry/box.hpp"
 #include "logging/test_runner.hpp"
@@ -72,7 +72,7 @@ namespace {
 // Exact convex-polygon predicate for checking a *relative* inclusion.
 // The proof of soundness of each projection comes from its support bounds.
 bool contains_projected_point(const Polytope& outer,
-                     const Rational& x, const Rational& y) {
+                              const Rational& x, const Rational& y) {
     const auto& vertices = outer.vertices();
     if (vertices.empty())
         return false;
@@ -600,12 +600,12 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
                 ARIADNE_TESTING_PROVE(refined_inside_fallback);
                 ARIADNE_TESTING_NOTE(
                     "Captured one-constraint enclosure " << i
-                                           << " projected axes=(" << axes.first << "," << axes.second
-                                           << ") simplex_24_directions_ms=" << elapsed
-                                           << " support_cuts=" << refined.certified_cuts
-                                           << " simplex_cuts=" << refined.simplex_cuts
-                                           << " relaxed_cuts=" << refined.relaxed_cuts
-                                           << " simplex_failures=" << refined.simplex_failures);
+                                                         << " projected axes=(" << axes.first << "," << axes.second
+                                                         << ") simplex_24_directions_ms=" << elapsed
+                                                         << " support_cuts=" << refined.certified_cuts
+                                                         << " simplex_cuts=" << refined.simplex_cuts
+                                                         << " relaxed_cuts=" << refined.relaxed_cuts
+                                                         << " simplex_failures=" << refined.simplex_failures);
             }
         }
     }
