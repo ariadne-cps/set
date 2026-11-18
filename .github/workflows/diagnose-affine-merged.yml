@@ -1,0 +1,38 @@
+name: Diagnose consolidated affine projection tests
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  statuses: write
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Configure
+        run: cmake -S . -B build-affine-diagnostic -DCMAKE_BUILD_TYPE=Debug -DBUILD_PYTHON_BINDINGS=OFF -DWARNINGS_AS_ERRORS=ON
+      - name: Compile and report
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          cmake --build build-affine-diagnostic --target test_affine_sets --parallel 4 > affine-diagnostic.log 2>&1
+          result=$?
+          if [ "$result" -eq 0 ]; then
+            ctest --test-dir build-affine-diagnostic -R '^test_affine_sets$' --timeout 240 --output-on-failure >> affine-diagnostic.log 2>&1
+            result=$?
+          fi
+          cat affine-diagnostic.log
+          if [ "$result" -ne 0 ]; then
+            n=0
+            while IFS= read -r line; do
+              n=$((n + 1))
+              description="$(printf "%s" "$line" | cut -c 1-130)"
+              gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
+                -f state=failure -f context="affine-diagnostic/$n" \
+                -f description="$description" || true
+            done < <(grep -Ei -A 2 -B 2 'error:|fatal error:|FAILED|failure|timeout' affine-diagnostic.log | tail -n 24)
+          fi
+          exit "$result"
