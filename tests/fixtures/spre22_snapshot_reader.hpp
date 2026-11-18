@@ -134,7 +134,9 @@ inline CapturedSet decode_critical_11591(std::string_view encoded) {
     const SizeType projection_n = reader.read_uint(4u);
     const SizeType projection_x = reader.read_uint(4u);
     const SizeType projection_y = reader.read_uint(4u);
-    if (projection_n != 9u || projection_x != 1u || projection_y != 2u)
+    // This is a legacy v1 capture: the old writer added one extra
+    // unprojected time component. The original projection is unchanged.
+    if (projection_n != 8u || projection_x != 1u || projection_y != 2u)
         throw std::runtime_error("Unexpected SPRE22 projection");
     const SizeType dimension = reader.read_uint(4u);
     if (dimension != 26u) throw std::runtime_error("Unexpected SPRE22 parameter count");
@@ -145,7 +147,8 @@ inline CapturedSet decode_critical_11591(std::string_view encoded) {
         domain[i] = ExactIntervalType(lower, upper);
     }
     const SizeType count = reader.read_uint(4u);
-    if (count != projection_n) throw std::runtime_error("Unexpected SPRE22 mapping size");
+    if (count != projection_n + 1u)
+        throw std::runtime_error("Expected legacy SPRE22 extra time component");
     Vector<ValidatedTaylorModelDP> models(
         count, ValidatedTaylorModelDP(dimension, TrivialSweeper<FloatDP>(dp)));
     for (SizeType i = 0u; i != count; ++i)
