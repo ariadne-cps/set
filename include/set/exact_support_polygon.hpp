@@ -147,10 +147,11 @@ inline OuterPolygon2d certified_support_polygon_2d(
     std::sort(order.begin(), order.end(), [&](std::size_t a, std::size_t b) {
         if (clipped[a].first < clipped[b].first) return true;
         if (clipped[b].first < clipped[a].first) return false;
-        return clipped[a].second < clipped[b].second;
+        return decide(clipped[a].second < clipped[b].second);
     });
     order.erase(std::unique(order.begin(), order.end(), [&](std::size_t a, std::size_t b) {
-        return clipped[a].first == clipped[b].first && clipped[a].second == clipped[b].second;
+        return decide(clipped[a].first == clipped[b].first) &&
+               decide(clipped[a].second == clipped[b].second);
     }), order.end());
 
     const auto turn = [&](std::size_t ai, std::size_t bi, std::size_t ci) {
