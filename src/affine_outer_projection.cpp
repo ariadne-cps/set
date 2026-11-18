@@ -27,7 +27,6 @@
  */
 
 #include "set/affine_set.hpp"
-#include "set/exact_support_polygon.hpp"
 
 #include <algorithm>
 #include <cmath>

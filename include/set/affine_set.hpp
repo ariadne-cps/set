@@ -38,7 +38,7 @@
 #include "function/affine_model.hpp"
 #include "function/constraint.hpp"
 #include "geometry/declarations.hpp"
-#include "set/exact_support_polygon.hpp"
+#include "set/polytope.hpp"
 #include "logging/logging.hpp"
 #include "utility/container.hpp"
 

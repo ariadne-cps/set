@@ -478,7 +478,7 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
         const auto result = outer_project2d_with_report(set, 0u, 1u, 24u, false);
         ARIADNE_TESTING_EXPECT_EQUAL(result.certified_cuts, 24u);
         const auto& polygon = result.polygon.vertices();
-        ARIADNE_TESTING_PROVE(polygon.number_of_vertices() >= 3u);
+        ARIADNE_TESTING_PROVE(polygon.size() >= 3u);
 
         bool all_contained = true;
         for (int ix = -8; ix <= -7; ++ix) {

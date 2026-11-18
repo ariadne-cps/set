@@ -32,7 +32,7 @@
 #include <vector>
 
 #include "logging/test_runner.hpp"
-#include "set/exact_support_polygon.hpp"
+#include "set/polytope.hpp"
 
 #include "ariadne-testing.hpp"
 

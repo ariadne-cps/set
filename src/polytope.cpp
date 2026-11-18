@@ -30,10 +30,13 @@
 #include "set/polytope.hpp"
 
 #include <algorithm>
+#include <cmath>
+#include <utility>
 #include <stdexcept>
 #include <vector>
 
 #include "algebra/vector.hpp"
+#include "numeric/builtin.hpp"
 
 namespace Ariadne {
 namespace {
@@ -184,6 +187,69 @@ RationalPoint mean_of_generators(const Polytope& p) {
     for (SizeType i = 0u; i != p.dimension(); ++i)
         sum[i] /= count;
     return RationalPoint(sum);
+}
+
+Polytope certified_support_polygon_2d(
+    const std::array<double, 4>& bounds,
+    const std::vector<CertifiedSupportHalfplane2d>& halfplanes)
+{
+    using Vertex = std::pair<Rational, Rational>;
+    const auto exact = [](double value) -> Rational {
+        if (!std::isfinite(value)) {
+            throw std::invalid_argument("Support polygon requires finite binary64 coefficients");
+        }
+        return Rational(ExactDouble(value));
+    };
+    if (bounds[0] > bounds[1] || bounds[2] > bounds[3]) {
+        throw std::invalid_argument("Support polygon initial box is reversed");
+    }
+    std::vector<Vertex> clipped = {
+        {exact(bounds[0]), exact(bounds[2])},
+        {exact(bounds[1]), exact(bounds[2])},
+        {exact(bounds[1]), exact(bounds[3])},
+        {exact(bounds[0]), exact(bounds[3])}
+    };
+    const Rational zero(0);
+    for (const auto& plane : halfplanes) {
+        const Rational a = exact(plane.nx);
+        const Rational b = exact(plane.ny);
+        const Rational c = exact(plane.upper);
+        const auto distance = [&](const Vertex& point) {
+            return a * point.first + b * point.second - c;
+        };
+
+        std::vector<Vertex> next;
+        if (clipped.empty()) break;
+        next.reserve(clipped.size() + 2u);
+        Vertex previous = clipped.back();
+        Rational previous_distance = distance(previous);
+        for (const Vertex& current : clipped) {
+            const Rational current_distance = distance(current);
+            const bool was_inside = previous_distance <= zero;
+            const bool is_inside = current_distance <= zero;
+            if (was_inside != is_inside) {
+                const Rational t = previous_distance / (previous_distance - current_distance);
+                next.emplace_back(previous.first + t * (current.first - previous.first),
+                                  previous.second + t * (current.second - previous.second));
+            }
+            if (is_inside) next.push_back(current);
+            previous = current;
+            previous_distance = current_distance;
+        }
+        clipped.swap(next);
+    }
+
+    // Use the generic exact V-polytope representation. Its reduction
+    // removes duplicate/collinear generators and preserves degenerate sets.
+    Polytope result(2u);
+    for (const auto& vertex : clipped) {
+        Vector<Rational> coordinates(2u, Rational(0));
+        coordinates[0] = vertex.first;
+        coordinates[1] = vertex.second;
+        result.new_vertex(RationalPoint(coordinates));
+    }
+    result.reduce2d();
+    return result;
 }
 
 } // namespace Ariadne

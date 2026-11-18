@@ -30,6 +30,7 @@
 #ifndef ARIADNE_POLYTOPE_HPP
 #define ARIADNE_POLYTOPE_HPP
 
+#include <array>
 #include <vector>
 
 #include "geometry/point.hpp"
@@ -85,6 +86,30 @@ class Polytope {
     DimensionType _dimension = 0u;
     std::vector<VertexType> _vertices;
 };
+
+/** @brief A halfplane nx*x+ny*y<=upper, interpreted as exact binary64 dyadics.
+ *
+ *  The calling algorithm must establish that upper is a conservative
+ *  support bound. Exact clipping cannot certify an incorrectly supplied cut.
+ */
+struct CertifiedSupportHalfplane2d {
+    double nx;
+    double ny;
+    double upper;
+};
+
+/** @brief Intersect a certified enclosing box and certified halfplanes exactly.
+ *
+ *  All binary64 coefficients are converted to exact rationals before any
+ *  predicate or intersection. The result encloses the original projected
+ *  set if and only if the caller supplied an enclosing box and sound support
+ *  upper bounds. No heuristic clipping epsilon or display conversion occurs.
+ *  Invalid or nonfinite inputs throw. Empty and degenerate intersections
+ *  are returned explicitly.
+ */
+Polytope certified_support_polygon_2d(
+    const std::array<double, 4>& bounds,
+    const std::vector<CertifiedSupportHalfplane2d>& halfplanes);
 
 /** @brief Convex hull of two vertex-represented polytopes of the same ambient dimension. */
 Polytope convex_hull(const Polytope& p1, const Polytope& p2);
