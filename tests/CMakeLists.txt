@@ -11,6 +11,7 @@ set(UNIT_TESTS
     test_polytope
     test_support_polygon
     test_spre22_outer_projection
+    test_spre22_critical
 )
 foreach(TEST IN LISTS UNIT_TESTS)
     add_executable(${TEST} ${TEST}.cpp)
@@ -27,3 +28,6 @@ add_dependencies(tests ${UNIT_TESTS})
 # The real SPRE22 replay must never hold a CI runner indefinitely if a
 # future simplex regression reintroduces cycling.
 set_tests_properties(test_spre22_outer_projection PROPERTIES TIMEOUT 120)
+
+# Critical original SPRE22 index 11591 must not monopolise a CI runner.
+set_tests_properties(test_spre22_critical PROPERTIES TIMEOUT 120)
