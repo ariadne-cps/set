@@ -441,7 +441,9 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
         ARIADNE_TESTING_EXPECT_EQUAL(report.relaxed_cuts, directions);
         ARIADNE_TESTING_EXPECT_EQUAL(report.simplex_failures, 0u);
         ARIADNE_TESTING_PROVE(report.used_relaxation());
-        ARIADNE_TESTING_PROVE(!report.box_only());
+        // Twelve valid cuts can all be redundant: counting them is not
+        // equivalent to proving that the box geometry became smaller.
+        ARIADNE_TESTING_PROVE(report.box_only());
         ARIADNE_TESTING_EXPECT_EQUAL(report.polygon.size(), 4u);
 
         // An infeasible constraint does not license claiming mathematical

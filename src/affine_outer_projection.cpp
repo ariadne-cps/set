@@ -227,8 +227,21 @@ OuterProjection2dResult outer_project2d_with_report(
             else ++relaxed_cuts;
         }
     }
-    return {certified_support_polygon_2d({xl, xu, yl, yu}, cuts),
-            directions, cuts.size(), simplex_cuts, relaxed_cuts, simplex_failures};
+    const std::array<double, 4> bounds{xl, xu, yl, yu};
+    OuterPolygon2d polygon = certified_support_polygon_2d(bounds, cuts);
+    const OuterPolygon2d initial_box = certified_support_polygon_2d(bounds, {});
+    bool box_unchanged = polygon.size() == initial_box.size();
+    if (box_unchanged) {
+        for (SizeType i = 0u; i != polygon.size(); ++i) {
+            if (polygon.vertices()[i].first != initial_box.vertices()[i].first ||
+                polygon.vertices()[i].second != initial_box.vertices()[i].second) {
+                box_unchanged = false;
+                break;
+            }
+        }
+    }
+    return {std::move(polygon), directions, cuts.size(), simplex_cuts,
+            relaxed_cuts, simplex_failures, box_unchanged};
 }
 
 OuterPolygon2d outer_project2d(const ValidatedAffineConstrainedImageSet& set,

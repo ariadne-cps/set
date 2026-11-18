@@ -188,9 +188,14 @@ struct OuterProjection2dResult {
     SizeType simplex_cuts;
     SizeType relaxed_cuts;
     SizeType simplex_failures;
+    bool box_unchanged;
 
-    /** @brief True when no finite directional support improved the box representation. */
-    bool box_only() const { return certified_cuts == 0u; }
+    /** @brief True when the exact result coincides with the initial enclosing box.
+     *
+     *  This is a geometric equality check, not merely a count of certified
+     *  halfplanes: all valid halfplanes may be redundant.
+     */
+    bool box_only() const { return box_unchanged; }
     /** @brief True if any constrained support used zero dual multipliers. */
     bool used_relaxation() const { return relaxed_cuts != 0u; }
 };
