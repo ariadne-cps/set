@@ -228,13 +228,13 @@ OuterProjection2dResult outer_project2d_with_report(
         }
     }
     const std::array<double, 4> bounds{xl, xu, yl, yu};
-    OuterPolygon2d polygon = certified_support_polygon_2d(bounds, cuts);
-    const OuterPolygon2d initial_box = certified_support_polygon_2d(bounds, {});
-    bool box_unchanged = polygon.size() == initial_box.size();
+    Polytope polygon = certified_support_polygon_2d(bounds, cuts);
+    const Polytope initial_box = certified_support_polygon_2d(bounds, {});
+    bool box_unchanged = polygon.number_of_vertices() == initial_box.number_of_vertices();
     if (box_unchanged) {
-        for (SizeType i = 0u; i != polygon.size(); ++i) {
-            if (polygon.vertices()[i].first != initial_box.vertices()[i].first ||
-                polygon.vertices()[i].second != initial_box.vertices()[i].second) {
+        for (SizeType i = 0u; i != polygon.number_of_vertices(); ++i) {
+            if (polygon.vertex(i)[0] != initial_box.vertex(i)[0] ||
+                polygon.vertex(i)[1] != initial_box.vertex(i)[1]) {
                 box_unchanged = false;
                 break;
             }
@@ -244,7 +244,7 @@ OuterProjection2dResult outer_project2d_with_report(
             relaxed_cuts, simplex_failures, box_unchanged};
 }
 
-OuterPolygon2d outer_project2d(const ValidatedAffineConstrainedImageSet& set,
+Polytope outer_project2d(const ValidatedAffineConstrainedImageSet& set,
                                SizeType xind, SizeType yind, SizeType directions) {
     return outer_project2d_with_report(set, xind, yind, directions).polygon;
 }

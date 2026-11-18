@@ -42,7 +42,7 @@ using namespace Ariadne;
 
 namespace {
 
-bool inside_outer_polygon(const OuterPolygon2d& polygon, const Rational& x,
+bool inside_outer_polygon(const Polytope& polygon, const Rational& x,
                           const Rational& y) {
     const auto& vertices = polygon.vertices();
     if (vertices.size() < 3u) return false;
@@ -50,8 +50,8 @@ bool inside_outer_polygon(const OuterPolygon2d& polygon, const Rational& x,
         const auto& a = vertices[i];
         const auto& b = vertices[(i + 1u) % vertices.size()];
         const Rational cross =
-            (b.first - a.first) * (y - a.second) -
-            (b.second - a.second) * (x - a.first);
+            (b[0] - a[0]) * (y - a[1]) -
+            (b[1] - a[1]) * (x - a[0]);
         if (cross < Rational(0)) return false;
     }
     return true;
@@ -100,7 +100,7 @@ class TestSPRE22OuterProjection : public Ariadne::Testing::ContextFixture {
                 bool refined_inside_fallback = true;
                 for (const auto& vertex : refined.polygon.vertices()) {
                     if (!inside_outer_polygon(
-                            fallback.polygon, vertex.first, vertex.second)) {
+                            fallback.polygon, vertex[0], vertex[1])) {
                         refined_inside_fallback = false;
                     }
                 }

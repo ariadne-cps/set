@@ -182,7 +182,7 @@ class ValidatedAffineConstrainedImageSet
  *  does not claim to decide source-set emptiness.
  */
 struct OuterProjection2dResult {
-    OuterPolygon2d polygon;
+    Polytope polygon;
     SizeType requested_directions;
     SizeType certified_cuts;
     SizeType simplex_cuts;
@@ -214,7 +214,7 @@ OuterProjection2dResult outer_project2d_with_report(
     bool attempt_simplex = true);
 
 /** @brief Convenience API returning only the conservative mathematical polygon. */
-OuterPolygon2d outer_project2d(const ValidatedAffineConstrainedImageSet& set,
+Polytope outer_project2d(const ValidatedAffineConstrainedImageSet& set,
                                SizeType xind, SizeType yind, SizeType directions = 48u);
 
 inline OutputStream& operator<<(OutputStream& os, const ValidatedAffineConstrainedImageSet& as) {

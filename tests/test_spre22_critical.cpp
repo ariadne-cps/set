@@ -46,29 +46,29 @@ namespace {
 
 // Exact convex-polygon predicate for checking a *relative* inclusion.
 // The proof of soundness of each projection comes from its support bounds.
-bool contains_vertex(const OuterPolygon2d& outer,
+bool contains_vertex(const Polytope& outer,
                      const Rational& x, const Rational& y) {
     const auto& vertices = outer.vertices();
     if (vertices.empty()) return false;
     if (vertices.size() == 1u) {
-        if (vertices[0].first != x) return false;
-        return decide(vertices[0].second == y);
+        if (vertices[0][0] != x) return false;
+        return decide(vertices[0][1] == y);
     }
     if (vertices.size() == 2u) {
         const auto& a = vertices[0];
         const auto& b = vertices[1];
-        const Rational cross = (b.first - a.first) * (y - a.second)
-                             - (b.second - a.second) * (x - a.first);
-        const Rational dot = (x - a.first) * (x - b.first)
-                           + (y - a.second) * (y - b.second);
+        const Rational cross = (b[0] - a[0]) * (y - a[1])
+                             - (b[1] - a[1]) * (x - a[0]);
+        const Rational dot = (x - a[0]) * (x - b[0])
+                           + (y - a[1]) * (y - b[1]);
         if (cross != Rational(0)) return false;
         return decide(dot <= Rational(0));
     }
     for (std::size_t i = 0u; i != vertices.size(); ++i) {
         const auto& a = vertices[i];
         const auto& b = vertices[(i + 1u) % vertices.size()];
-        if ((b.first - a.first) * (y - a.second)
-          - (b.second - a.second) * (x - a.first) < Rational(0))
+        if ((b[0] - a[0]) * (y - a[1])
+          - (b[1] - a[1]) * (x - a[0]) < Rational(0))
             return false;
     }
     return true;
@@ -120,10 +120,10 @@ class TestSPRE22Critical : public Ariadne::Testing::ContextFixture {
              box[capture.y].upper_bound().raw().get_d()}, {});
         bool inside_box = true;
         for (const auto& vertex : optimised.polygon.vertices())
-            if (!contains_vertex(initial, vertex.first, vertex.second))
+            if (!contains_vertex(initial, vertex[0], vertex[1]))
                 inside_box = false;
         for (const auto& vertex : relaxed.polygon.vertices())
-            if (!contains_vertex(initial, vertex.first, vertex.second))
+            if (!contains_vertex(initial, vertex[0], vertex[1]))
                 inside_box = false;
         ARIADNE_TESTING_PROVE(inside_box);
         ARIADNE_TESTING_NOTE("SPRE22 index=11591 x=1 y=2 parameters=26 constraints=4 "

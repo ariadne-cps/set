@@ -333,7 +333,7 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
         x = Affine<FloatDPBounds>::variables(2, dp);
         set = ValidatedAffineConstrainedImageSet(D, {x[0], x[1]}, {x[0] <= 0.0_x});
         const auto polygon = outer_project2d(set, 0u, 1u, 24u);
-        ARIADNE_TESTING_PROVE(polygon.size() >= 3u);
+        ARIADNE_TESTING_PROVE(polygon.number_of_vertices() >= 3u);
 
         const auto contains = [&](const Rational& px, const Rational& py) {
             const auto& points = polygon.vertices();
@@ -342,8 +342,8 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
                 const auto& a = points[i];
                 const auto& b = points[(i + 1u) % points.size()];
                 const Rational cross =
-                    (b.first - a.first) * (py - a.second) -
-                    (b.second - a.second) * (px - a.first);
+                    (b[0] - a[0]) * (py - a[1]) -
+                    (b[1] - a[1]) * (px - a[0]);
                 if (cross < Rational(0)) return false;
             }
             return true;
@@ -364,7 +364,7 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
         // No constraints: support bounds must still enclose a zonotope.
         set = ValidatedAffineConstrainedImageSet(D, {x[0], x[1]});
         const auto unconstrained = outer_project2d(set, 0u, 1u, 16u);
-        ARIADNE_TESTING_PROVE(unconstrained.size() >= 3u);
+        ARIADNE_TESTING_PROVE(unconstrained.number_of_vertices() >= 3u);
         const auto& p = unconstrained.vertices();
         bool corners_inside = true;
         for (int sx : {-1, 1}) {
@@ -374,8 +374,8 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
                     const auto& a = p[i];
                     const auto& b = p[(i + 1u) % p.size()];
                     const Rational px(sx), py(sy);
-                    if ((b.first - a.first) * (py - a.second) -
-                        (b.second - a.second) * (px - a.first) < Rational(0)) {
+                    if ((b[0] - a[0]) * (py - a[1]) -
+                        (b[1] - a[1]) * (px - a[0]) < Rational(0)) {
                         inside = false;
                         break;
                     }
@@ -402,7 +402,7 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
             }
             ARIADNE_TESTING_EXPECT_EQUAL(set.number_of_constraints(), nc);
             const auto polygon = outer_project2d(set, 0u, 1u, 16u);
-            ARIADNE_TESTING_PROVE(polygon.size() >= 3u);
+            ARIADNE_TESTING_PROVE(polygon.number_of_vertices() >= 3u);
             const auto& points = polygon.vertices();
             bool all_contained = true;
             for (int ix = -4; ix <= 4; ++ix) {
@@ -415,8 +415,8 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
                         const auto& a = points[i];
                         const auto& b = points[(i + 1u) % points.size()];
                         const Rational cross =
-                            (b.first - a.first) * (py - a.second) -
-                            (b.second - a.second) * (px - a.first);
+                            (b[0] - a[0]) * (py - a[1]) -
+                            (b[1] - a[1]) * (px - a[0]);
                         if (cross < Rational(0)) all_contained = false;
                     }
                 }
@@ -444,7 +444,7 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
         // Twelve valid cuts can all be redundant: counting them is not
         // equivalent to proving that the box geometry became smaller.
         ARIADNE_TESTING_PROVE(report.box_only());
-        ARIADNE_TESTING_EXPECT_EQUAL(report.polygon.size(), 4u);
+        ARIADNE_TESTING_EXPECT_EQUAL(report.polygon.number_of_vertices(), 4u);
 
         // An infeasible constraint does not license claiming mathematical
         // emptiness from an approximate LP solve or from a bounding box.
@@ -478,7 +478,7 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
         const auto result = outer_project2d_with_report(set, 0u, 1u, 24u, false);
         ARIADNE_TESTING_EXPECT_EQUAL(result.certified_cuts, 24u);
         const auto& polygon = result.polygon.vertices();
-        ARIADNE_TESTING_PROVE(polygon.size() >= 3u);
+        ARIADNE_TESTING_PROVE(polygon.number_of_vertices() >= 3u);
 
         bool all_contained = true;
         for (int ix = -8; ix <= -7; ++ix) {
@@ -494,8 +494,8 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
                             const auto& a = polygon[i];
                             const auto& b = polygon[(i + 1u) % polygon.size()];
                             const Rational cross =
-                                (b.first - a.first) * (py - a.second) -
-                                (b.second - a.second) * (px - a.first);
+                                (b[0] - a[0]) * (py - a[1]) -
+                                (b[1] - a[1]) * (px - a[0]);
                             if (cross < Rational(0)) all_contained = false;
                         }
                     }

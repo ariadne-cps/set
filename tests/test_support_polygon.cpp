@@ -44,27 +44,28 @@ Rational exact(double value) {
     return Rational(ExactDouble(value));
 }
 
-bool includes(const OuterPolygon2d& polygon, const Rational& x, const Rational& y) {
+bool includes(const Polytope& polygon, const Rational& x, const Rational& y) {
     const auto& vertices = polygon.vertices();
     if (vertices.empty()) return false;
     if (vertices.size() == 1u) {
-        return vertices[0].first == x && vertices[0].second == y;
+        if (vertices[0][0] != x) return false;
+        return decide(vertices[0][1] == y);
     }
     if (vertices.size() == 2u) {
         const auto& a = vertices[0];
         const auto& b = vertices[1];
-        const Rational cross = (b.first - a.first) * (y - a.second) -
-                               (b.second - a.second) * (x - a.first);
+        const Rational cross = (b[0] - a[0]) * (y - a[1]) -
+                               (b[1] - a[1]) * (x - a[0]);
         if (cross != Rational(0)) return false;
-        const Rational dot = (x - a.first) * (x - b.first) +
-                             (y - a.second) * (y - b.second);
+        const Rational dot = (x - a[0]) * (x - b[0]) +
+                             (y - a[1]) * (y - b[1]);
         return dot <= Rational(0);
     }
     for (std::size_t i = 0u; i < vertices.size(); ++i) {
         const auto& a = vertices[i];
         const auto& b = vertices[(i + 1u) % vertices.size()];
-        const Rational cross = (b.first - a.first) * (y - a.second) -
-                               (b.second - a.second) * (x - a.first);
+        const Rational cross = (b[0] - a[0]) * (y - a[1]) -
+                               (b[1] - a[1]) * (x - a[0]);
         if (cross < Rational(0)) return false;
     }
     return true;
@@ -84,7 +85,7 @@ class TestSupportPolygon : public Ariadne::Testing::ContextFixture {
             {0.0, 1.0, 0.6}
         };
         const auto polygon = certified_support_polygon_2d({-1.0, 1.0, -1.0, 1.0}, cuts);
-        ARIADNE_TESTING_PROVE(polygon.size() >= 3u);
+        ARIADNE_TESTING_PROVE(polygon.number_of_vertices() >= 3u);
 
         // Non-dyadic intersection of two dyadic lines, checked exactly.
         const Rational x = (Rational(3) * exact(0.3) + Rational(2) * exact(0.4)) / Rational(13);
@@ -110,8 +111,8 @@ class TestSupportPolygon : public Ariadne::Testing::ContextFixture {
         // The result must be genuinely tighter than the initial box.
         bool has_cut_vertex = false;
         for (const auto& p : polygon.vertices()) {
-            if (p.first != exact(-1.0) && p.first != exact(1.0) &&
-                p.second != exact(-1.0) && p.second != exact(1.0)) {
+            if (p[0] != exact(-1.0) && p[0] != exact(1.0) &&
+                p[1] != exact(-1.0) && p[1] != exact(1.0)) {
                 has_cut_vertex = true;
             }
         }
@@ -128,13 +129,13 @@ class TestSupportPolygon : public Ariadne::Testing::ContextFixture {
             {-1.0, 1.0, -1.0, 1.0},
             {{1.0, 0.0, 0.0}, {-1.0, 0.0, 0.0},
              {0.0, 1.0, 0.0}, {0.0, -1.0, 0.0}});
-        ARIADNE_TESTING_EXPECT_EQUAL(singleton.size(), 1u);
+        ARIADNE_TESTING_EXPECT_EQUAL(singleton.number_of_vertices(), 1u);
         ARIADNE_TESTING_PROVE(includes(singleton, Rational(0), Rational(0)));
 
         const auto segment = certified_support_polygon_2d(
             {-1.0, 1.0, -1.0, 1.0},
             {{1.0, 0.0, 0.0}, {-1.0, 0.0, 0.0}});
-        ARIADNE_TESTING_EXPECT_EQUAL(segment.size(), 2u);
+        ARIADNE_TESTING_EXPECT_EQUAL(segment.number_of_vertices(), 2u);
         ARIADNE_TESTING_PROVE(includes(segment, Rational(0), Rational(0)));
         ARIADNE_TESTING_PROVE(includes(segment, Rational(0), Rational(1)));
     }
@@ -142,7 +143,7 @@ class TestSupportPolygon : public Ariadne::Testing::ContextFixture {
     Void test_invalid_inputs_and_zero_cuts() {
         const std::vector<CertifiedSupportHalfplane2d> none;
         const auto box = certified_support_polygon_2d({-2.0, 2.0, -3.0, 3.0}, none);
-        ARIADNE_TESTING_EXPECT_EQUAL(box.size(), 4u);
+        ARIADNE_TESTING_EXPECT_EQUAL(box.number_of_vertices(), 4u);
         ARIADNE_TESTING_PROVE(includes(box, Rational(0), Rational(0)));
         ARIADNE_TESTING_EXPECT_EXCEPTION(
             certified_support_polygon_2d({1.0, -1.0, -1.0, 1.0}, none));
