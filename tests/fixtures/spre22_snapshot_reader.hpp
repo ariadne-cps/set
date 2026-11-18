@@ -10,6 +10,7 @@
 #include <bit>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <stdexcept>
 #include <string_view>
 #include <vector>
@@ -109,8 +110,13 @@ inline ValidatedTaylorModelDP read_taylor_model(BinaryReader& reader, SizeType d
     expansion.reserve(terms);
     for (SizeType i = 0u; i != terms; ++i) {
         MultiIndex index(arguments);
-        for (SizeType j = 0u; j != arguments; ++j)
-            index[j] = reader.read_uint(4u);
+        for (SizeType j = 0u; j != arguments; ++j) {
+            const std::uint64_t exponent = reader.read_uint(4u);
+            if (exponent > static_cast<std::uint64_t>(
+                               std::numeric_limits<MultiIndexData::IndexType>::max()))
+                throw std::runtime_error("SPRE22 exponent exceeds MultiIndex index range");
+            index[j] = static_cast<MultiIndexData::IndexType>(exponent);
+        }
         expansion.append(index, reader.read_float());
     }
     return ValidatedTaylorModelDP(
