@@ -10,8 +10,6 @@ set(UNIT_TESTS
     test_multifunction_image
     test_polytope
     test_support_polygon
-    test_spre22_outer_projection
-    test_spre22_critical
 )
 foreach(TEST IN LISTS UNIT_TESTS)
     add_executable(${TEST} ${TEST}.cpp)
@@ -25,9 +23,6 @@ foreach(TEST IN LISTS UNIT_TESTS)
 endforeach()
 add_custom_target(tests)
 add_dependencies(tests ${UNIT_TESTS})
-# The real SPRE22 replay must never hold a CI runner indefinitely if a
-# future simplex regression reintroduces cycling.
-set_tests_properties(test_spre22_outer_projection PROPERTIES TIMEOUT 120)
-
-# Critical original SPRE22 index 11591 must not monopolise a CI runner.
-set_tests_properties(test_spre22_critical PROPERTIES TIMEOUT 120)
+# Prevent regressions in constrained affine support optimisation from
+# holding a test runner indefinitely, including on captured high-dimensional cases.
+set_tests_properties(test_affine_sets PROPERTIES TIMEOUT 240)

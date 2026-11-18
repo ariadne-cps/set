@@ -1,14 +1,14 @@
-/** @file tests/fixtures/spre22_critical_11591.hpp
- *  @brief Bit-exact SPRE22 input, index 11591, captured from ariadne-cps/arch.
- *  Source: SPRE22 binary format v1, original capture [11590,11593).
+/** @file tests/fixtures/affine_projection_record.hpp
+ *  @brief Bit-exact high-dimensional constrained image captured before projection.
+ *  Source: binary fixture format v1, original record 11591.
  *  RLE of zero runs/literals, then base64, solely to keep the fixture portable.
  *  SHA-256 of original 26221-byte record:
  *  9cae99c144092b5713fa7c3088ae680232518f9094e272b5fa10297419a0c466
  */
-#ifndef ARIADNE_SET_SPRE22_CRITICAL_11591_HPP
-#define ARIADNE_SET_SPRE22_CRITICAL_11591_HPP
-namespace Ariadne::SPRE22Fixture {
-static constexpr char encoded_record_11591[] =
+#ifndef ARIADNE_SET_AFFINE_PROJECTION_RECORD_HPP
+#define ARIADNE_SET_AFFINE_PROJECTION_RECORD_HPP
+namespace Ariadne::AffineProjectionFixture {
+static constexpr char encoded_high_constraint_record[] =
     "AWVmhQFHLYUACIIAAYIAAoIAGpAB8D+NAfA/jQHwP40B8D+NAfA/jQHwP40B8D+NAfA/jQHwP40B8D+NAfA/jQHwP40B8D+NAfA/"
     "jQHwP40B8D+NAfA/jQHwP40B8D+GCICuRvfogILYP4YggOhnjZGkQdY/3Kp2kaJN0r+FzFaDh0KgP7jySkMz7IW/hx/XsKm/n8Rj"
     "vxoyJhhPyoQ/kFQb/iVncr9WmX+uZeXYP40C4D8JggAaggABhQqAPnnKvXpEUJA9EeYAAYgB0D/LAAGaB65G9+iAgsg/wwABogdX"
@@ -57,5 +57,5 @@ static constexpr char encoded_record_11591[] =
     "igAB2gcRPqL6uxyuvosAAdoIzwZFg6FiI78BhgAC3gfhlhEbYwuGvocAAt4IhdePfE/4974ChgAB3ghXhnOwqYvEvgGGAAHeB1bf"
     "OJIUqzW/hwAB3gcQnco/LIWov4MAAeIINtN4CL+I6L4D5giFLXs4WE3XvgLmCJTSFdQOgFO/AeYHV70IflsR1r/nF/7NxPxfd9O/"
     "y8MEEWEKoD3LwwQRYQqgPYUB8P+FAvD/GoIAAYUBgD6HAALmAAGIAdA/7QHQv48=";
-} // namespace Ariadne::SPRE22Fixture
+} // namespace Ariadne::AffineProjectionFixture
 #endif

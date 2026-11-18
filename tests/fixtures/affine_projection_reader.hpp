@@ -1,11 +1,10 @@
-/** @file tests/fixtures/spre22_snapshot_reader.hpp
- *  @brief Test-only reader for a bit-exact SPRE22 drawing-input record.
+/** @file tests/fixtures/affine_projection_reader.hpp
+ *  @brief Test-only reader for a bit-exact high-dimensional constrained-image record.
  *
- *  This reads the documented format v1 from ariadne-cps/arch's
- *  spre22-plot-reproducer branch. No drawing/arch dependency is introduced.
+ *  This reads a fixed binary record with no runtime external dependency.
  */
-#ifndef ARIADNE_SET_TEST_SPRE22_SNAPSHOT_READER_HPP
-#define ARIADNE_SET_TEST_SPRE22_SNAPSHOT_READER_HPP
+#ifndef ARIADNE_SET_TEST_AFFINE_PROJECTION_READER_HPP
+#define ARIADNE_SET_TEST_AFFINE_PROJECTION_READER_HPP
 
 #include <bit>
 #include <cmath>
@@ -19,7 +18,7 @@
 #include "function/taylor_function.hpp"
 #include "set/function_set.hpp"
 
-namespace Ariadne::SPRE22Fixture {
+namespace Ariadne::AffineProjectionFixture {
 
 // A high-bit tag is a run of zero bytes; other tags precede literal bytes.
 // Encoding does not alter any of the original binary64 coefficients.
@@ -42,7 +41,7 @@ inline std::vector<std::uint8_t> decode_rle_base64(std::string_view encoded) {
         else if (ch == '=')
             break;
         else
-            throw std::runtime_error("Invalid SPRE22 fixture encoding");
+            throw std::runtime_error("Invalid captured projection fixture encoding");
         accumulator = (accumulator << 6u) | digit;
         bits += 6u;
         if (bits >= 8u) {
@@ -59,7 +58,7 @@ inline std::vector<std::uint8_t> decode_rle_base64(std::string_view encoded) {
             bytes.insert(bytes.end(), count, std::uint8_t{0});
         } else {
             if (count > packed.size() - pos)
-                throw std::runtime_error("Truncated SPRE22 RLE");
+                throw std::runtime_error("Truncated captured projection RLE");
             for (std::size_t k = 0u; k != count; ++k)
                 bytes.push_back(packed[pos++]);
         }
@@ -73,7 +72,7 @@ class BinaryReader {
 
     std::uint64_t read_uint(unsigned width) {
         if (width > 8u || width > _bytes.size() - _offset)
-            throw std::runtime_error("Truncated SPRE22 record");
+            throw std::runtime_error("Truncated captured projection record");
         std::uint64_t value = 0u;
         for (unsigned k = 0u; k < width; ++k)
             value |= std::uint64_t(_bytes[_offset++]) << (8u * k);
@@ -83,7 +82,7 @@ class BinaryReader {
     FloatDP read_float(bool allow_infinity = false) {
         const double value = std::bit_cast<double>(read_uint(8u));
         if (std::isnan(value) || (!allow_infinity && !std::isfinite(value)))
-            throw std::runtime_error("Nonfinite SPRE22 coefficient");
+            throw std::runtime_error("Nonfinite captured projection coefficient");
         if (std::isinf(value))
             return FloatDP::inf(std::signbit(value) ? Sign::NEGATIVE : Sign::POSITIVE, dp);
         return FloatDP(ExactDouble(value), dp);
@@ -105,15 +104,15 @@ class BinaryReader {
 inline ValidatedTaylorModelDP read_taylor_model(BinaryReader& reader, SizeType dimension) {
     const SizeType arguments = reader.read_uint(4u);
     if (arguments != dimension || arguments > 4096u)
-        throw std::runtime_error("SPRE22 model dimension mismatch");
+        throw std::runtime_error("captured projection model dimension mismatch");
     // The captured critical record uses ThresholdSweeper, tag 1.
     if (reader.read_uint(1u) != 1u)
-        throw std::runtime_error("Unsupported SPRE22 sweeper");
+        throw std::runtime_error("Unsupported captured projection sweeper");
     const FloatDP threshold = reader.read_float();
     const FloatDP error = reader.read_float();
     const SizeType terms = reader.read_uint(4u);
     if (terms > 10000000u)
-        throw std::runtime_error("Excessive SPRE22 term count");
+        throw std::runtime_error("Excessive captured projection term count");
     Expansion<MultiIndex, FloatDP> expansion(arguments, dp);
     expansion.reserve(terms);
     for (SizeType i = 0u; i != terms; ++i) {
@@ -122,7 +121,7 @@ inline ValidatedTaylorModelDP read_taylor_model(BinaryReader& reader, SizeType d
             const std::uint64_t exponent = reader.read_uint(4u);
             if (exponent > static_cast<std::uint64_t>(
                                std::numeric_limits<MultiIndexData::IndexType>::max()))
-                throw std::runtime_error("SPRE22 exponent exceeds MultiIndex index range");
+                throw std::runtime_error("captured projection exponent exceeds MultiIndex index range");
             index[j] = static_cast<MultiIndexData::IndexType>(exponent);
         }
         expansion.append(index, reader.read_float());
@@ -139,22 +138,22 @@ struct CapturedSet {
 };
 
 // Decodes one original record including the 8-byte length prefix.
-inline CapturedSet decode_critical_11591(std::string_view encoded) {
+inline CapturedSet decode_high_constraint_record(std::string_view encoded) {
     const auto data = decode_rle_base64(encoded);
     BinaryReader reader(data);
     const std::uint64_t length = reader.read_uint(8u);
     if (length + 8u != data.size() || reader.read_uint(8u) != 11591u)
-        throw std::runtime_error("SPRE22 critical record index/length mismatch");
+        throw std::runtime_error("captured projection critical record index/length mismatch");
     const SizeType projection_n = reader.read_uint(4u);
     const SizeType projection_x = reader.read_uint(4u);
     const SizeType projection_y = reader.read_uint(4u);
     // This is a legacy v1 capture: the old writer added one extra
     // unprojected time component. The original projection is unchanged.
     if (projection_n != 8u || projection_x != 1u || projection_y != 2u)
-        throw std::runtime_error("Unexpected SPRE22 projection");
+        throw std::runtime_error("Unexpected captured projection");
     const SizeType dimension = reader.read_uint(4u);
     if (dimension != 26u)
-        throw std::runtime_error("Unexpected SPRE22 parameter count");
+        throw std::runtime_error("Unexpected captured projection parameter count");
     ExactBoxType domain(dimension);
     for (SizeType i = 0u; i != dimension; ++i) {
         const FloatDP lower = reader.read_float();
@@ -163,7 +162,7 @@ inline CapturedSet decode_critical_11591(std::string_view encoded) {
     }
     const SizeType count = reader.read_uint(4u);
     if (count != projection_n + 1u)
-        throw std::runtime_error("Expected legacy SPRE22 extra time component");
+        throw std::runtime_error("Expected legacy captured projection extra time component");
     Vector<ValidatedTaylorModelDP> models(
         count, ValidatedTaylorModelDP(dimension, TrivialSweeper<FloatDP>(dp)));
     for (SizeType i = 0u; i != count; ++i)
@@ -172,7 +171,7 @@ inline CapturedSet decode_critical_11591(std::string_view encoded) {
 
     const SizeType nc = reader.read_uint(4u);
     if (nc != 4u)
-        throw std::runtime_error("Unexpected SPRE22 constraint count");
+        throw std::runtime_error("Unexpected captured projection constraint count");
     List<ValidatedConstraint> constraints;
     for (SizeType i = 0u; i != nc; ++i) {
         const FloatDPBounds lower = reader.read_bounds();
@@ -182,12 +181,12 @@ inline CapturedSet decode_critical_11591(std::string_view encoded) {
             lower, ValidatedScalarMultivariateTaylorFunctionModelDP(domain, model), upper));
     }
     if (!reader.at_end())
-        throw std::runtime_error("Trailing SPRE22 record bytes");
+        throw std::runtime_error("Trailing captured projection record bytes");
     return {ValidatedConstrainedImageSet(
                 domain, ValidatedVectorMultivariateFunctionModelDP(mapping), constraints),
             projection_x, projection_y};
 }
 
-} // namespace Ariadne::SPRE22Fixture
+} // namespace Ariadne::AffineProjectionFixture
 
-#endif // ARIADNE_SET_TEST_SPRE22_SNAPSHOT_READER_HPP
+#endif // ARIADNE_SET_TEST_AFFINE_PROJECTION_READER_HPP

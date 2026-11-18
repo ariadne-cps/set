@@ -1,5 +1,5 @@
 /***************************************************************************
- *            tests/fixtures/spre22_affine_subset.hpp
+ *            tests/fixtures/affine_projection_samples.hpp
  *
  *  Copyright  2026  Luca Geretti
  *
@@ -22,18 +22,18 @@
  *  along with Ariadne Set. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/** @file tests/fixtures/spre22_affine_subset.hpp
- *  @brief Bit-exact SPRE22 enclosure captures 1 and 17 for Set regression.
+/** @file tests/fixtures/affine_projection_samples.hpp
+ *  @brief Bit-exact captured nonlinear constrained-image samples for affine projection.
  *  @details Extracted unchanged from Paving fixture at commit
  *  f7ad74742c07785b180916d45c664d6415760ccb, generated from the
- *  real SPRE22 evolver (horizon 1/16, max jumps 1, 48 enclosures).
+ *  numerical evolution experiment (horizon 1/16, max jumps 1).
  *  These are nonlinear Taylor sets with one constraint each; they are
- *  NOT the original affine nc=3/nc=4 cycling examples.
+ *  distinct from the high-parameter four-constraint regression.
  *  Fixture is test-only and does not introduce a Paving dependency.
  */
 
-#ifndef ARIADNE_SET_SPRE22_AFFINE_SUBSET_HPP
-#define ARIADNE_SET_SPRE22_AFFINE_SUBSET_HPP
+#ifndef ARIADNE_SET_AFFINE_PROJECTION_SAMPLES_HPP
+#define ARIADNE_SET_AFFINE_PROJECTION_SAMPLES_HPP
 
 #include <bit>
 #include <cstdint>
@@ -43,8 +43,8 @@
 #include "function/taylor_function.hpp"
 #include "set/function_set.hpp"
 
-namespace Ariadne::SPRE22Fixture {
-inline std::vector<ValidatedConstrainedImageSet> affine_projection_samples() {
+namespace Ariadne::AffineProjectionFixture {
+inline std::vector<ValidatedConstrainedImageSet> captured_affine_projection_samples() {
     std::vector<ValidatedConstrainedImageSet> sets;
     sets.reserve(2u);
     {
@@ -289,6 +289,6 @@ inline std::vector<ValidatedConstrainedImageSet> affine_projection_samples() {
     }
     return sets;
 }
-} // namespace Ariadne::SPRE22Fixture
+} // namespace Ariadne::AffineProjectionFixture
 
-#endif // ARIADNE_SET_SPRE22_AFFINE_SUBSET_HPP
+#endif // ARIADNE_SET_AFFINE_PROJECTION_SAMPLES_HPP

@@ -27,10 +27,14 @@
  */
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <iostream>
 #include <memory>
 
+#include "fixtures/affine_projection_samples.hpp"
+#include "fixtures/affine_projection_record.hpp"
+#include "fixtures/affine_projection_reader.hpp"
 #include "function/function.hpp"
 #include "geometry/box.hpp"
 #include "logging/test_runner.hpp"
@@ -62,6 +66,40 @@ AffineConstraint<X> operator==(const Affine<X>& a, const Dyadic& u) {
     return AffineConstraint<X>(u, a, u);
 }
 } // namespace Ariadne
+
+namespace {
+
+// Exact convex-polygon predicate for checking a *relative* inclusion.
+// The proof of soundness of each projection comes from its support bounds.
+bool contains_projected_point(const Polytope& outer,
+                     const Rational& x, const Rational& y) {
+    const auto& vertices = outer.vertices();
+    if (vertices.empty())
+        return false;
+    if (vertices.size() == 1u) {
+        if (vertices[0][0] != x)
+            return false;
+        return decide(vertices[0][1] == y);
+    }
+    if (vertices.size() == 2u) {
+        const auto& a = vertices[0];
+        const auto& b = vertices[1];
+        const Rational cross = (b[0] - a[0]) * (y - a[1]) - (b[1] - a[1]) * (x - a[0]);
+        const Rational dot = (x - a[0]) * (x - b[0]) + (y - a[1]) * (y - b[1]);
+        if (cross != Rational(0))
+            return false;
+        return decide(dot <= Rational(0));
+    }
+    for (std::size_t i = 0u; i != vertices.size(); ++i) {
+        const auto& a = vertices[i];
+        const auto& b = vertices[(i + 1u) % vertices.size()];
+        if ((b[0] - a[0]) * (y - a[1]) - (b[1] - a[1]) * (x - a[0]) < Rational(0))
+            return false;
+    }
+    return true;
+}
+
+} // namespace
 
 class TestAffineSet : public Ariadne::Testing::ContextFixture {
   private:
@@ -392,8 +430,8 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
     }
 
     Void test_outer_projection_multiple_constraints() {
-        // Synthetic three- and four-guard regressions; these do not replace
-        // the original SPRE22 nc=3/nc=4 enclosure snapshots.
+        // Synthetic three- and four-guard regressions complement the
+        // high-dimensional captured constrained-image regressions.
         D = ExactBoxType::unit_box(2);
         x = Affine<FloatDPBounds>::variables(2, dp);
         for (SizeType nc = 3u; nc != 5u; ++nc) {
@@ -513,6 +551,120 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
         ARIADNE_TESTING_PROVE(all_contained);
     }
 
+    // Captured affine projections cover repeated-constraint and high-parameter
+    // configurations without depending on a particular benchmark executable.
+    Void test_captured_affine_outer_projection() {
+        const auto captured = AffineProjectionFixture::captured_affine_projection_samples();
+        ARIADNE_TESTING_EXPECT_EQUAL(captured.size(), 2u);
+
+        for (SizeType i = 0u; i != captured.size(); ++i) {
+            const ValidatedAffineConstrainedImageSet affine =
+                captured[i].affine_over_approximation();
+            ARIADNE_TESTING_EXPECT_EQUAL(affine.dimension(), 5u);
+            ARIADNE_TESTING_EXPECT_EQUAL(affine.number_of_constraints(), 1u);
+
+            // Two captured nonlinear constrained images with one affine guard
+            // each exercise independent coordinate-plane projections.
+            for (const auto& axes: {
+                     std::pair<SizeType, SizeType>{1u, 2u},
+                     std::pair<SizeType, SizeType>{3u, 4u}
+            }) {
+                const auto start = std::chrono::steady_clock::now();
+                const auto refined = outer_project2d_with_report(
+                    affine, axes.first, axes.second, 24u, true);
+                const auto elapsed = std::chrono::duration<double, std::milli>(
+                                         std::chrono::steady_clock::now() - start)
+                                         .count();
+
+                const auto fallback = outer_project2d_with_report(
+                    affine, axes.first, axes.second, 24u, false);
+                ARIADNE_TESTING_EXPECT_EQUAL(refined.requested_directions, 24u);
+                ARIADNE_TESTING_EXPECT_EQUAL(fallback.requested_directions, 24u);
+                ARIADNE_TESTING_EXPECT_EQUAL(fallback.simplex_cuts, 0u);
+                ARIADNE_TESTING_EXPECT_EQUAL(fallback.simplex_failures, 0u);
+                ARIADNE_TESTING_PROVE(!refined.polygon.empty());
+                ARIADNE_TESTING_PROVE(!fallback.polygon.empty());
+                ARIADNE_TESTING_PROVE(refined.certified_cuts <= 24u);
+                ARIADNE_TESTING_PROVE(fallback.certified_cuts <= 24u);
+
+                // Both are mathematically conservative, and the simplex
+                // certificate should not extend beyond the initial box.
+                // Geometry is independently checked using rational predicates.
+                bool refined_inside_fallback = true;
+                for (const auto& vertex: refined.polygon.vertices()) {
+                    if (!contains_projected_point(
+                            fallback.polygon, vertex[0], vertex[1])) {
+                        refined_inside_fallback = false;
+                    }
+                }
+                ARIADNE_TESTING_PROVE(refined_inside_fallback);
+                ARIADNE_TESTING_NOTE(
+                    "Captured one-constraint enclosure " << i
+                                           << " projected axes=(" << axes.first << "," << axes.second
+                                           << ") simplex_24_directions_ms=" << elapsed
+                                           << " support_cuts=" << refined.certified_cuts
+                                           << " simplex_cuts=" << refined.simplex_cuts
+                                           << " relaxed_cuts=" << refined.relaxed_cuts
+                                           << " simplex_failures=" << refined.simplex_failures);
+            }
+        }
+    }
+
+    Void test_high_constraint_outer_projection_termination() {
+        const auto capture = AffineProjectionFixture::decode_high_constraint_record(
+            AffineProjectionFixture::encoded_high_constraint_record);
+        ARIADNE_TESTING_EXPECT_EQUAL(capture.set.number_of_parameters(), 26u);
+        ARIADNE_TESTING_EXPECT_EQUAL(capture.set.number_of_constraints(), 4u);
+        ARIADNE_TESTING_EXPECT_EQUAL(capture.set.dimension(), 9u);
+        ARIADNE_TESTING_EXPECT_EQUAL(capture.x, 1u);
+        ARIADNE_TESTING_EXPECT_EQUAL(capture.y, 2u);
+
+        const ValidatedAffineConstrainedImageSet affine =
+            capture.set.affine_over_approximation();
+        const SizeType ndirections = 24u;
+        const auto begin = std::chrono::steady_clock::now();
+        const auto optimised = outer_project2d_with_report(
+            affine, capture.x, capture.y, ndirections, true);
+        const double elapsed_ms = std::chrono::duration<double, std::milli>(
+                                      std::chrono::steady_clock::now() - begin)
+                                      .count();
+        const auto relaxed = outer_project2d_with_report(
+            affine, capture.x, capture.y, ndirections, false);
+
+        ARIADNE_TESTING_EXPECT_EQUAL(optimised.requested_directions, ndirections);
+        ARIADNE_TESTING_EXPECT_EQUAL(relaxed.requested_directions, ndirections);
+        ARIADNE_TESTING_PROVE(optimised.certified_cuts <= ndirections);
+        ARIADNE_TESTING_PROVE(relaxed.certified_cuts <= ndirections);
+        ARIADNE_TESTING_EXPECT_EQUAL(relaxed.simplex_cuts, 0u);
+        ARIADNE_TESTING_EXPECT_EQUAL(relaxed.simplex_failures, 0u);
+        ARIADNE_TESTING_PROVE(!optimised.polygon.empty());
+        ARIADNE_TESTING_PROVE(!relaxed.polygon.empty());
+
+        // Both certified polygons must be inside the original validated
+        // bounding box. This is a geometric check, not a claim that the
+        // optimiser always improves over zero dual multipliers.
+        const auto box = affine.bounding_box();
+        const auto initial = certified_support_polygon_2d(
+            {box[capture.x].lower_bound().raw().get_d(),
+             box[capture.x].upper_bound().raw().get_d(),
+             box[capture.y].lower_bound().raw().get_d(),
+             box[capture.y].upper_bound().raw().get_d()},
+            {});
+        bool inside_box = true;
+        for (const auto& vertex: optimised.polygon.vertices())
+            if (!contains_projected_point(initial, vertex[0], vertex[1]))
+                inside_box = false;
+        for (const auto& vertex: relaxed.polygon.vertices())
+            if (!contains_vertex(initial, vertex[0], vertex[1]))
+                inside_box = false;
+        ARIADNE_TESTING_PROVE(inside_box);
+        ARIADNE_TESTING_NOTE("High-dimensional constrained affine projection: parameters=26 constraints=4 "
+                             << "projection_24_directions_ms=" << elapsed_ms
+                             << " simplex_cuts=" << optimised.simplex_cuts
+                             << " relaxed_cuts=" << optimised.relaxed_cuts
+                             << " simplex_failures=" << optimised.simplex_failures);
+    }
+
     Void test_empty_constrained_boundary() {
         // The parameter domain is [-1,1]^2, but -x[1]<=-2 requires
         // x[1]>=2. The affine image is therefore empty and has no boundary.
@@ -617,6 +769,8 @@ int main(int argc, char** argv) {
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_outer_projection_multiple_constraints);
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_outer_projection_fallback_report);
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_outer_projection_model_errors_and_guard_bounds);
+    ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_captured_affine_outer_projection);
+    ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_high_constraint_outer_projection_termination);
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_empty_constrained_boundary);
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_large_zonotope_boundary);
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_collinear_negative_zonotope_boundary);
