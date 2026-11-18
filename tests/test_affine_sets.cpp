@@ -386,6 +386,45 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
         ARIADNE_TESTING_PROVE(corners_inside);
     }
 
+    Void test_outer_projection_multiple_constraints() {
+        // Synthetic three- and four-guard regressions; these do not replace
+        // the original SPRE22 nc=3/nc=4 enclosure snapshots.
+        D = ExactBoxType::unit_box(2);
+        x = Affine<FloatDPBounds>::variables(2, dp);
+        for (SizeType nc = 3u; nc != 5u; ++nc) {
+            set = ValidatedAffineConstrainedImageSet(
+                D, {x[0], x[1]},
+                {x[0] + x[1] <= 1.0_x,
+                 x[0] - x[1] <= 1.0_x,
+                 -1.0_x * x[0] + x[1] <= 1.0_x});
+            if (nc == 4u) {
+                set.new_parameter_constraint(-1.0_x * x[0] - x[1] <= 1.0_x);
+            }
+            ARIADNE_TESTING_EXPECT_EQUAL(set.number_of_constraints(), nc);
+            const auto polygon = outer_project2d(set, 0u, 1u, 16u);
+            ARIADNE_TESTING_PROVE(polygon.size() >= 3u);
+            const auto& points = polygon.vertices();
+            bool all_contained = true;
+            for (int ix = -4; ix <= 4; ++ix) {
+                for (int iy = -4; iy <= 4; ++iy) {
+                    if (!(ix + iy <= 4 && ix - iy <= 4 &&
+                          -ix + iy <= 4 && (nc == 3u || -ix - iy <= 4))) continue;
+                    const Rational px = Rational(ix) / Rational(4);
+                    const Rational py = Rational(iy) / Rational(4);
+                    for (std::size_t i = 0u; i != points.size(); ++i) {
+                        const auto& a = points[i];
+                        const auto& b = points[(i + 1u) % points.size()];
+                        const Rational cross =
+                            (b.first - a.first) * (py - a.second) -
+                            (b.second - a.second) * (px - a.first);
+                        if (cross < Rational(0)) all_contained = false;
+                    }
+                }
+            }
+            ARIADNE_TESTING_PROVE(all_contained);
+        }
+    }
+
     Void test_empty_constrained_boundary() {
         // The parameter domain is [-1,1]^2, but -x[1]<=-2 requires
         // x[1]>=2. The affine image is therefore empty and has no boundary.
@@ -487,6 +526,7 @@ int main(int argc, char** argv) {
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_separated);
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_constrained_boundary);
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_outer_projection_enclosure);
+    ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_outer_projection_multiple_constraints);
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_empty_constrained_boundary);
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_large_zonotope_boundary);
     ARIADNE_TESTING_ADD_TEST(TestAffineSet, test_collinear_negative_zonotope_boundary);

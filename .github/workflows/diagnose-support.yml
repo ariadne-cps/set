@@ -27,6 +27,10 @@ jobs:
           set +e
           cmake --build build-support-diagnostic --target tests --parallel 4 > compiler-diagnostic.log 2>&1
           result=$?
+          if [ "$result" -eq 0 ]; then
+            ctest --test-dir build-support-diagnostic -R 'test_support_polygon|test_affine_sets' --timeout 120 --output-on-failure >> compiler-diagnostic.log 2>&1
+            result=$?
+          fi
           cat compiler-diagnostic.log
           if [ "$result" -ne 0 ]; then
             n=0
@@ -36,6 +40,6 @@ jobs:
               gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
                 -f state=failure -f context="support-polygon-diagnostic/$n" \
                 -f description="$description" || true
-            done < <(grep -E 'error:|fatal error:|error C[0-9]+' compiler-diagnostic.log | head -n 5)
+            done < <(grep -Ei 'error:|fatal error:|error C[0-9]+|failed|failure|timeout' compiler-diagnostic.log | head -n 5)
           fi
           exit "$result"
