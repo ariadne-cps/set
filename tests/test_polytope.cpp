@@ -42,18 +42,21 @@ namespace {
 RationalPoint make_point(std::initializer_list<Int> values) {
     Vector<Rational> coordinates(values.size(), Rational(0));
     SizeType i = 0u;
-    for (auto value: values) coordinates[i++] = Rational(value);
+    for (auto value: values)
+        coordinates[i++] = Rational(value);
     return RationalPoint(coordinates);
 }
 
 bool has_vertex(const Polytope& p, const RationalPoint& vertex) {
     for (const auto& candidate: p.vertices()) {
-        if (candidate.dimension() != vertex.dimension()) continue;
+        if (candidate.dimension() != vertex.dimension())
+            continue;
         bool same = true;
         for (SizeType i = 0u; i != vertex.dimension(); ++i) {
             same = same && (candidate[i] == vertex[i]);
         }
-        if (same) return true;
+        if (same)
+            return true;
     }
     return false;
 }
@@ -77,11 +80,9 @@ class TestPolytope : public Ariadne::Testing::ContextFixture {
     }
 
     Void test_reduction_2d() {
-        Polytope p(2u, {
-            make_point({0, 0}), make_point({2, 0}), make_point({2, 2}),
-            make_point({0, 2}), make_point({1, 1}), make_point({2, 0}),
-            make_point({1, 0}), make_point({0, 1})
-        });
+        Polytope p(2u, {make_point({0, 0}), make_point({2, 0}), make_point({2, 2}),
+                        make_point({0, 2}), make_point({1, 1}), make_point({2, 0}),
+                        make_point({1, 0}), make_point({0, 1})});
         p.reduce2d();
         ARIADNE_TESTING_EXPECT_EQUAL(p.number_of_vertices(), 4u);
         ARIADNE_TESTING_PROVE(has_vertex(p, make_point({0, 0})));
@@ -114,10 +115,8 @@ class TestPolytope : public Ariadne::Testing::ContextFixture {
         ARIADNE_TESTING_PROVE(has_vertex(pair, make_point({3, 4})));
         ARIADNE_TESTING_PROVE(has_vertex(pair, make_point({0, 1})));
 
-        Polytope segment(2u, {
-            make_point({3, 3}), make_point({0, 0}),
-            make_point({2, 2}), make_point({1, 1}), make_point({3, 3})
-        });
+        Polytope segment(2u, {make_point({3, 3}), make_point({0, 0}),
+                              make_point({2, 2}), make_point({1, 1}), make_point({3, 3})});
         segment.reduce2d();
         ARIADNE_TESTING_EXPECT_EQUAL(segment.number_of_vertices(), 2u);
         ARIADNE_TESTING_PROVE(has_vertex(segment, make_point({0, 0})));
@@ -125,11 +124,9 @@ class TestPolytope : public Ariadne::Testing::ContextFixture {
     }
 
     Void test_projection_and_hull() {
-        Polytope p(3u, {
-            make_point({0, 3, 2}), make_point({0, 4, 0}),
-            make_point({1, 3, 0}), make_point({1, 4, 2}),
-            make_point({0, 3, 1})
-        });
+        Polytope p(3u, {make_point({0, 3, 2}), make_point({0, 4, 0}),
+                        make_point({1, 3, 0}), make_point({1, 4, 2}),
+                        make_point({0, 3, 1})});
         const Polytope xy = project2d(p, 2u, 1u);
         ARIADNE_TESTING_EXPECT_EQUAL(xy.dimension(), 2u);
         ARIADNE_TESTING_EXPECT_EQUAL(xy.number_of_vertices(), 4u);

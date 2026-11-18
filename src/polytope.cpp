@@ -39,8 +39,10 @@ namespace Ariadne {
 namespace {
 
 bool lexicographic_less_2d(const RationalPoint& lhs, const RationalPoint& rhs) {
-    if (lhs[0] < rhs[0]) return true;
-    if (rhs[0] < lhs[0]) return false;
+    if (lhs[0] < rhs[0])
+        return true;
+    if (rhs[0] < lhs[0])
+        return false;
     return lhs[1] < rhs[1];
 }
 
@@ -49,8 +51,8 @@ bool same_point_2d(const RationalPoint& lhs, const RationalPoint& rhs) {
 }
 
 Rational oriented_area_twice(const RationalPoint& a,
-                            const RationalPoint& b,
-                            const RationalPoint& c) {
+                             const RationalPoint& b,
+                             const RationalPoint& c) {
     return (b[0] - a[0]) * (c[1] - a[1]) -
            (b[1] - a[1]) * (c[0] - a[0]);
 }
@@ -110,8 +112,9 @@ void Polytope::reduce2d() {
         // Keep the size guard separate: Rational comparisons return Ariadne
         // Boolean, whose overloaded conjunction does not short-circuit.
         while (hull.size() >= 2u) {
-            if (oriented_area_twice(_vertices[hull[hull.size()-2u]],
-                                    _vertices[hull.back()], _vertices[index]) > zero) break;
+            if (oriented_area_twice(_vertices[hull[hull.size() - 2u]],
+                                    _vertices[hull.back()], _vertices[index]) > zero)
+                break;
             hull.pop_back();
         }
         hull.push_back(index);
@@ -119,10 +122,11 @@ void Polytope::reduce2d() {
     const SizeType lower_size = hull.size();
     if (order.size() > 1u) {
         for (SizeType i = order.size() - 1u; i != 0u; --i) {
-            const SizeType index = order[i-1u];
+            const SizeType index = order[i - 1u];
             while (hull.size() > lower_size) {
-                if (oriented_area_twice(_vertices[hull[hull.size()-2u]],
-                                        _vertices[hull.back()], _vertices[index]) > zero) break;
+                if (oriented_area_twice(_vertices[hull[hull.size() - 2u]],
+                                        _vertices[hull.back()], _vertices[index]) > zero)
+                    break;
                 hull.pop_back();
             }
             hull.push_back(index);
@@ -143,9 +147,12 @@ Polytope convex_hull(const Polytope& p1, const Polytope& p2) {
         throw std::invalid_argument("Convex hull requires matching ambient dimensions");
     }
     Polytope result(p1.dimension());
-    for (const auto& point: p1.vertices()) result.new_vertex(point);
-    for (const auto& point: p2.vertices()) result.new_vertex(point);
-    if (result.dimension() == 2u) result.reduce2d();
+    for (const auto& point: p1.vertices())
+        result.new_vertex(point);
+    for (const auto& point: p2.vertices())
+        result.new_vertex(point);
+    if (result.dimension() == 2u)
+        result.reduce2d();
     return result;
 }
 
@@ -170,10 +177,12 @@ RationalPoint mean_of_generators(const Polytope& p) {
     }
     Vector<Rational> sum(p.dimension(), Rational(0));
     for (const auto& point: p.vertices()) {
-        for (SizeType i = 0u; i != p.dimension(); ++i) sum[i] += point[i];
+        for (SizeType i = 0u; i != p.dimension(); ++i)
+            sum[i] += point[i];
     }
     const Rational count(p.number_of_vertices());
-    for (SizeType i = 0u; i != p.dimension(); ++i) sum[i] /= count;
+    for (SizeType i = 0u; i != p.dimension(); ++i)
+        sum[i] /= count;
     return RationalPoint(sum);
 }
 
