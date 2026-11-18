@@ -655,7 +655,7 @@ class TestAffineSet : public Ariadne::Testing::ContextFixture {
             if (!contains_projected_point(initial, vertex[0], vertex[1]))
                 inside_box = false;
         for (const auto& vertex: relaxed.polygon.vertices())
-            if (!contains_vertex(initial, vertex[0], vertex[1]))
+            if (!contains_projected_point(initial, vertex[0], vertex[1]))
                 inside_box = false;
         ARIADNE_TESTING_PROVE(inside_box);
         ARIADNE_TESTING_NOTE("High-dimensional constrained affine projection: parameters=26 constraints=4 "
