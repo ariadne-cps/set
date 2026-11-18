@@ -10,6 +10,7 @@ set(UNIT_TESTS
     test_multifunction_image
     test_polytope
     test_support_polygon
+    test_spre22_outer_projection
 )
 foreach(TEST IN LISTS UNIT_TESTS)
     add_executable(${TEST} ${TEST}.cpp)
