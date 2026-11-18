@@ -38,6 +38,6 @@ jobs:
               gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
                 -f state=failure -f context="critical-diagnostic/$n" \
                 -f description="$description" || true
-            done < <(grep -Ei 'error:|fatal error:|FAILED|failure|timeout' compiler-diagnostic.log | head -n 8)
+            done < <(tail -n 24 compiler-diagnostic.log | head -n 20)
           fi
           exit "$result"
