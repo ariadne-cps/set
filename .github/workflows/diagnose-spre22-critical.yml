@@ -13,13 +13,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - name: Dependencies
-        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build pkg-config clang-16
       - name: Configure
         run: |
-          cmake -S . -B build-critical-diagnostic -G Ninja \
-            -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=clang++-16 \
-            -DBUILD_PYTHON_BINDINGS=OFF
+          cmake -S . -B build-critical-diagnostic \
+            -DCMAKE_BUILD_TYPE=Debug -DBUILD_PYTHON_BINDINGS=OFF
       - name: Compile critical fixture and publish diagnostic
         env:
           GH_TOKEN: ${{ github.token }}
