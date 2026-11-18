@@ -52,8 +52,8 @@ inline std::vector<std::uint8_t> decode_rle_base64(std::string_view encoded) {
         } else {
             if (count > packed.size() - pos)
                 throw std::runtime_error("Truncated SPRE22 RLE");
-            bytes.insert(bytes.end(), packed.begin() + pos, packed.begin() + pos + count);
-            pos += count;
+            for (std::size_t k = 0u; k != count; ++k)
+                bytes.push_back(packed[pos++]);
         }
     }
     return bytes;
